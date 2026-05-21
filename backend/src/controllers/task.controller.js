@@ -4,6 +4,8 @@ const Project = require("../models/project.model");
 const asyncHandler = require("../utils/asyncHandler");
 const ApiError = require("../utils/ApiError");
 
+const logActivity = require("../utils/logActivity");
+
 const createTask = asyncHandler(async (req, res) => {
   const { title, description, projectId, assignedTo } = req.body;
 
@@ -20,6 +22,16 @@ const createTask = asyncHandler(async (req, res) => {
     project: projectId,
     assignedTo,
     createdBy: req.user.userId,
+  });
+
+  await logActivity({
+    project: projectId,
+    user: req.user.userId,
+    action: "TASK_CREATED",
+    metadata: {
+      taskId: task._id,
+      title: task.title,
+    },
   });
 
   res.status(201).json({
@@ -106,6 +118,13 @@ const updateTask = asyncHandler(async (req, res) => {
     .populate("createdBy", "name email")
     .populate("project", "title");
 
+  await logActivity({
+    project: task.project,
+    user: req.user.userId,
+    action: "TASK_UPDATED",
+    metadata: { taskId: task._id },
+  });
+
   res.status(200).json({
     success: true,
     message: "Task updated successfully",
@@ -131,6 +150,13 @@ const deleteTask = asyncHandler(async (req, res) => {
   }
 
   await task.deleteOne();
+
+  await logActivity({
+    project: task.project,
+    user: req.user.userId,
+    action: "TASK_DELETED",
+    metadata: { taskId: task._id },
+  });
 
   res.status(200).json({
     success: true,
