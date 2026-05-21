@@ -18,6 +18,7 @@ const {
 } = require("../validations/task.validation");
 
 const isProjectMember = require("../middlewares/projectMember.middleware");
+const isTaskMember = require("../middlewares/taskMember.middleware");
 
 // create task
 router.post(
@@ -33,9 +34,16 @@ router.post(
 router.get("/", protect, isProjectMember, getTasks);
 
 // update task
-router.patch("/:id", protect, updateTaskValidation, validate, updateTask);
+router.patch(
+  "/:id",
+  protect,
+  isTaskMember,
+  updateTaskValidation,
+  validate,
+  updateTask,
+);
 
 // delete task
-router.delete("/:id", protect, deleteTask);
+router.delete("/:id", protect, isTaskMember, deleteTask);
 
 module.exports = router;
