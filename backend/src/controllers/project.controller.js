@@ -3,6 +3,7 @@ const Project = require("../models/project.model");
 const asyncHandler = require("../utils/asyncHandler");
 const User = require("../models/user.model");
 const ApiError = require("../utils/ApiError");
+const createNotification = require("../utils/createNotification");
 
 const createProject = asyncHandler(async (req, res) => {
   const { title, description } = req.body;
@@ -76,6 +77,12 @@ const addProjectMember = asyncHandler(async (req, res) => {
   await project.save();
 
   await project.populate("members", "name email role");
+
+  await createNotification({
+    user: user._id,
+    message: `You were added to project ${project.title}`,
+    type: "PROJECT_MEMBER_ADDED",
+  });
 
   res.status(200).json({
     success: true,

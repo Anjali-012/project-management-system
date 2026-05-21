@@ -34,6 +34,14 @@ const createTask = asyncHandler(async (req, res) => {
     },
   });
 
+  if (assignedTo) {
+    await createNotification({
+      user: assignedTo,
+      message: `You were assigned a new task: ${task.title}`,
+      type: "TASK_ASSIGNED",
+    });
+  }
+
   res.status(201).json({
     success: true,
     message: "Task created successfully",
