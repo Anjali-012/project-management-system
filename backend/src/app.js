@@ -5,11 +5,14 @@ const authRoutes = require("./routes/auth.routes");
 const projectRoutes = require("./routes/project.routes");
 const taskRoutes = require("./routes/task.routes");
 
+const errorMiddleware = require("./middlewares/error.middleware");
+
 const app = express();
 
 // middlewares
 app.use(cors());
 app.use(express.json());
+app.use(errorMiddleware);
 
 // test route
 app.get("/health", (req, res) => {

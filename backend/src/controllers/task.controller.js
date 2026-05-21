@@ -1,154 +1,116 @@
 const Task = require("../models/task.model");
 const Project = require("../models/project.model");
 
-const createTask = async (req, res) => {
-  try {
-    const { title, description, projectId, assignedTo } = req.body;
+const asyncHandler = require("../utils/asyncHandler");
 
-    // check project exists
-    const project = await Project.findById(projectId);
+const createTask = asyncHandler(async (req, res) => {
+  const { title, description, projectId, assignedTo } = req.body;
 
-    if (!project) {
-      return res.status(404).json({
-        success: false,
-        message: "Project not found",
-      });
-    }
+  // check project exists
+  const project = await Project.findById(projectId);
 
-    // create task
-    const task = await Task.create({
-      title,
-      description,
-      project: projectId,
-      assignedTo,
-      createdBy: req.user.userId,
-    });
-
-    res.status(201).json({
-      success: true,
-      message: "Task created successfully",
-      data: task,
-    });
-  } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: error.message,
-    });
+  if (!project) {
+    const error = new Error("Project not found");
+    error.statusCode = 404;
+    throw error;
   }
-};
 
-const getTasks = async (req, res) => {
-  try {
-    const { projectId, status } = req.query;
+  const task = await Task.create({
+    title,
+    description,
+    project: projectId,
+    assignedTo,
+    createdBy: req.user.userId,
+  });
 
-    // build filter object
-    const filter = {};
+  res.status(201).json({
+    success: true,
+    message: "Task created successfully",
+    data: task,
+  });
+});
 
-    // filter by project
-    if (projectId) {
-      filter.project = projectId;
-    }
+const getTasks = asyncHandler(async (req, res) => {
+  const { projectId, status } = req.query;
 
-    // filter by status
-    if (status) {
-      filter.status = status;
-    }
+  const filter = {};
 
-    // fetch tasks
-    const tasks = await Task.find(filter)
-      .populate("assignedTo", "name email")
-      .populate("createdBy", "name email")
-      .populate("project", "title");
-
-    res.status(200).json({
-      success: true,
-      count: tasks.length,
-      data: tasks,
-    });
-  } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: error.message,
-    });
+  if (projectId) {
+    filter.project = projectId;
   }
-};
 
-const updateTask = async (req, res) => {
-  try {
-    const { id } = req.params;
-
-    // find task
-    const task = await Task.findById(id);
-
-    if (!task) {
-      return res.status(404).json({
-        success: false,
-        message: "Task not found",
-      });
-    }
-
-    // update task
-    const updatedTask = await Task.findByIdAndUpdate(id, req.body, {
-      new: true,
-      runValidators: true,
-    })
-      .populate("assignedTo", "name email")
-      .populate("createdBy", "name email")
-      .populate("project", "title");
-
-    res.status(200).json({
-      success: true,
-      message: "Task updated successfully",
-      data: updatedTask,
-    });
-  } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: error.message,
-    });
+  if (status) {
+    filter.status = status;
   }
-};
 
-const deleteTask = async (req, res) => {
-  try {
-    const { id } = req.params;
+  const tasks = await Task.find(filter)
+    .populate("assignedTo", "name email")
+    .populate("createdBy", "name email")
+    .populate("project", "title");
 
-    // find task
-    const task = await Task.findById(id);
+  res.status(200).json({
+    success: true,
+    count: tasks.length,
+    data: tasks,
+  });
+});
 
-    if (!task) {
-      return res.status(404).json({
-        success: false,
-        message: "Task not found",
-      });
-    }
+const updateTask = asyncHandler(async (req, res) => {
+  const { id } = req.params;
 
-    // ownership check
-    const isTaskCreator = task.createdBy.toString() === req.user.userId;
+  const task = await Task.findById(id);
 
-    const isAdmin = req.user.role === "admin";
-
-    if (!isTaskCreator && !isAdmin) {
-      return res.status(403).json({
-        success: false,
-        message: "You are not allowed to delete this task",
-      });
-    }
-
-    // delete task
-    await task.deleteOne();
-
-    res.status(200).json({
-      success: true,
-      message: "Task deleted successfully",
-    });
-  } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: error.message,
-    });
+  if (!task) {
+    const error = new Error("Task not found");
+    error.statusCode = 404;
+    throw error;
   }
-};
+
+  const updatedTask = await Task.findByIdAndUpdate(id, req.body, {
+    new: true,
+    runValidators: true,
+  })
+    .populate("assignedTo", "name email")
+    .populate("createdBy", "name email")
+    .populate("project", "title");
+
+  res.status(200).json({
+    success: true,
+    message: "Task updated successfully",
+    data: updatedTask,
+  });
+});
+
+const deleteTask = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+
+  const task = await Task.findById(id);
+
+  if (!task) {
+    const error = new Error("Task not found");
+    error.statusCode = 404;
+    throw error;
+  }
+
+  const isTaskCreator = task.createdBy.toString() === req.user.userId;
+
+  const isAdmin = req.user.role === "admin";
+
+  if (!isTaskCreator && !isAdmin) {
+    const error = new Error("You are not allowed to delete this task");
+
+    error.statusCode = 403;
+
+    throw error;
+  }
+
+  await task.deleteOne();
+
+  res.status(200).json({
+    success: true,
+    message: "Task deleted successfully",
+  });
+});
 
 module.exports = {
   createTask,
