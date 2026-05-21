@@ -2,6 +2,7 @@ const Task = require("../models/task.model");
 const Project = require("../models/project.model");
 
 const asyncHandler = require("../utils/asyncHandler");
+const ApiError = require("../utils/ApiError");
 
 const createTask = asyncHandler(async (req, res) => {
   const { title, description, projectId, assignedTo } = req.body;
@@ -10,9 +11,7 @@ const createTask = asyncHandler(async (req, res) => {
   const project = await Project.findById(projectId);
 
   if (!project) {
-    const error = new Error("Project not found");
-    error.statusCode = 404;
-    throw error;
+    throw new ApiError(404, "Project not found");
   }
 
   const task = await Task.create({
@@ -61,9 +60,7 @@ const updateTask = asyncHandler(async (req, res) => {
   const task = await Task.findById(id);
 
   if (!task) {
-    const error = new Error("Task not found");
-    error.statusCode = 404;
-    throw error;
+    throw new ApiError(404, "Task not found");
   }
 
   const updatedTask = await Task.findByIdAndUpdate(id, req.body, {
@@ -87,9 +84,7 @@ const deleteTask = asyncHandler(async (req, res) => {
   const task = await Task.findById(id);
 
   if (!task) {
-    const error = new Error("Task not found");
-    error.statusCode = 404;
-    throw error;
+    throw new ApiError(404, "Task not found");
   }
 
   const isTaskCreator = task.createdBy.toString() === req.user.userId;
@@ -97,11 +92,7 @@ const deleteTask = asyncHandler(async (req, res) => {
   const isAdmin = req.user.role === "admin";
 
   if (!isTaskCreator && !isAdmin) {
-    const error = new Error("You are not allowed to delete this task");
-
-    error.statusCode = 403;
-
-    throw error;
+    throw new ApiError(403, "You are not allowed to delete this task");
   }
 
   await task.deleteOne();

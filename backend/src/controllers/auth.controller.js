@@ -3,6 +3,7 @@ const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 
 const asyncHandler = require("../utils/asyncHandler");
+const ApiError = require("../utils/ApiError");
 
 const registerUser = asyncHandler(async (req, res) => {
   const { name, email, password } = req.body;
@@ -11,9 +12,7 @@ const registerUser = asyncHandler(async (req, res) => {
   const existingUser = await User.findOne({ email });
 
   if (existingUser) {
-    const error = new Error("User already exists");
-    error.statusCode = 400;
-    throw error;
+    throw new ApiError(400, "User already exists");
   }
 
   // hash password
@@ -40,17 +39,14 @@ const loginUser = asyncHandler(async (req, res) => {
   const user = await User.findOne({ email });
 
   if (!user) {
-    const error = new Error("Invalid credentials");
-    error.statusCode = 400;
-    throw error;
+    throw new ApiError(400, "Invalid credentials");
   }
 
   // compare password
   const isPasswordMatched = await bcrypt.compare(password, user.password);
 
   if (!isPasswordMatched) {
-    const error = new Error("Invalid credentials");
-    error.statusCode = 400;
+    throw new ApiError(400, "Invalid credentials");
     throw error;
   }
 
