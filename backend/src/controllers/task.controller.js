@@ -30,8 +30,17 @@ const createTask = asyncHandler(async (req, res) => {
 });
 
 const getTasks = asyncHandler(async (req, res) => {
-  const { projectId, status } = req.query;
+  const {
+    projectId,
+    status,
+    search,
+    page = 1,
+    limit = 10,
+    sortBy = "createdAt",
+    order = "desc",
+  } = req.query;
 
+  // filter object
   const filter = {};
 
   if (projectId) {
@@ -42,13 +51,39 @@ const getTasks = asyncHandler(async (req, res) => {
     filter.status = status;
   }
 
+  // search by title
+  if (search) {
+    filter.title = {
+      $regex: search,
+      $options: "i",
+    };
+  }
+
+  // pagination
+  const skip = (page - 1) * limit;
+
+  // sorting
+  const sortOptions = {
+    [sortBy]: order === "asc" ? 1 : -1,
+  };
+
+  // fetch tasks
   const tasks = await Task.find(filter)
     .populate("assignedTo", "name email")
     .populate("createdBy", "name email")
-    .populate("project", "title");
+    .populate("project", "title")
+    .sort(sortOptions)
+    .skip(skip)
+    .limit(Number(limit));
+
+  // total count
+  const totalTasks = await Task.countDocuments(filter);
 
   res.status(200).json({
     success: true,
+    currentPage: Number(page),
+    totalPages: Math.ceil(totalTasks / limit),
+    totalTasks,
     count: tasks.length,
     data: tasks,
   });
