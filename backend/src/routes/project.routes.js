@@ -8,8 +8,14 @@ const {
 
 const { protect } = require("../middlewares/auth.middleware");
 
+const validate = require("../middlewares/validation.middleware");
+
+const {
+  createProjectValidation,
+} = require("../validations/project.validation");
+
 // create project
-router.post("/", protect, createProject);
+router.post("/", protect, createProjectValidation, validate, createProject);
 
 // get projects for logged-in user
 router.get("/", protect, getProjects);

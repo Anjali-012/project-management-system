@@ -10,14 +10,21 @@ const {
 
 const { protect } = require("../middlewares/auth.middleware");
 
+const validate = require("../middlewares/validation.middleware");
+
+const {
+  createTaskValidation,
+  updateTaskValidation,
+} = require("../validations/task.validation");
+
 // create task
-router.post("/", protect, createTask);
+router.post("/", protect, createTaskValidation, validate, createTask);
 
 // get tasks
 router.get("/", protect, getTasks);
 
 // update task
-router.put("/:id", protect, updateTask);
+router.patch("/:id", protect, updateTaskValidation, validate, updateTask);
 
 // delete task
 router.delete("/:id", protect, deleteTask);
