@@ -17,11 +17,20 @@ const {
   updateTaskValidation,
 } = require("../validations/task.validation");
 
+const isProjectMember = require("../middlewares/projectMember.middleware");
+
 // create task
-router.post("/", protect, createTaskValidation, validate, createTask);
+router.post(
+  "/",
+  protect,
+  createTaskValidation,
+  validate,
+  isProjectMember,
+  createTask,
+);
 
 // get tasks
-router.get("/", protect, getTasks);
+router.get("/", protect, isProjectMember, getTasks);
 
 // update task
 router.patch("/:id", protect, updateTaskValidation, validate, updateTask);
