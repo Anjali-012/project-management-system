@@ -1,3 +1,4 @@
+const createNotification = require("../utils/createNotification");
 const Task = require("../models/task.model");
 const Project = require("../models/project.model");
 
@@ -114,7 +115,10 @@ const getTasks = asyncHandler(async (req, res) => {
 const updateTask = asyncHandler(async (req, res) => {
   const { id } = req.params;
 
-  const task = await Task.findById(id);
+  const task = await Task.findOne({
+  _id: id,
+  isDeleted: false,
+});
 
   if (!task) {
     throw new ApiError(404, "Task not found");
@@ -145,7 +149,10 @@ const updateTask = asyncHandler(async (req, res) => {
 const deleteTask = asyncHandler(async (req, res) => {
   const { id } = req.params;
 
-  const task = await Task.findById(id);
+  const task = await Task.findOne({
+  _id: id,
+  isDeleted: false,
+});
 
   if (!task) {
     throw new ApiError(404, "Task not found");
