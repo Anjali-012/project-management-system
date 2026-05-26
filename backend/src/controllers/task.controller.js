@@ -61,7 +61,9 @@ const getTasks = asyncHandler(async (req, res) => {
   } = req.query;
 
   // filter object
-  const filter = {};
+ const filter = {
+  isDeleted: false,
+};
 
   if (projectId) {
     filter.project = projectId;
@@ -157,7 +159,10 @@ const deleteTask = asyncHandler(async (req, res) => {
     throw new ApiError(403, "You are not allowed to delete this task");
   }
 
-  await task.deleteOne();
+  task.isDeleted = true;
+task.deletedAt = new Date();
+
+await task.save();
 
   await logActivity({
     project: task.project,
