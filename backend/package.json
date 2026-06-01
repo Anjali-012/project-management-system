@@ -6,7 +6,10 @@
     "express": "^4.22.2",
     "express-validator": "^7.3.2",
     "jsonwebtoken": "^9.0.3",
-    "mongoose": "^9.6.2"
+    "mongoose": "^9.6.2",
+    "redis": "^5.10.0",
+    "@socket.io/redis-adapter": "^8.3.0",
+    "socket.io": "^4.8.1"
   },
   "devDependencies": {
     "nodemon": "^3.1.14"

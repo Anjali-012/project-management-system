@@ -20,6 +20,7 @@ const activitySchema = new mongoose.Schema(
       enum: [
         "TASK_CREATED",
         "TASK_UPDATED",
+        "TASK_STATUS_UPDATED",
         "TASK_DELETED",
         "MEMBER_ADDED",
         "PROJECT_CREATED",

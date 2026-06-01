@@ -6,7 +6,10 @@ const asyncHandler = require("../utils/asyncHandler");
 const isTaskMember = asyncHandler(async (req, res, next) => {
   const taskId = req.params.id;
 
-  const task = await Task.findById(taskId);
+  const task = await Task.findOne({
+    _id: taskId,
+    isDeleted: false,
+  });
 
   if (!task) {
     throw new ApiError(404, "Task not found");

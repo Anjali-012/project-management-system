@@ -3,7 +3,7 @@ const ApiError = require("../utils/ApiError");
 const asyncHandler = require("../utils/asyncHandler");
 
 const isProjectMember = asyncHandler(async (req, res, next) => {
-  const projectId = req.params.projectId || req.body.projectId;
+  const projectId = req.params.projectId || req.body.projectId || req.query.projectId;
 
   if (!projectId) {
     throw new ApiError(400, "Project ID is required");
