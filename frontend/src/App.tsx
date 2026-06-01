@@ -28,7 +28,7 @@ type Task = {
   description?: string
   status: TaskStatus
   project: { _id: string; title: string } | string
-  assignedTo?: Pick<User, 'id' | 'name' | 'email'> | null
+  assignedTo?: (Pick<User, 'id' | 'name' | 'email'> & { _id?: string }) | null
   createdAt: string
 }
 
@@ -58,6 +58,12 @@ type TaskUpdatePayload = {
   description?: string
   assignedTo?: string | null
   status?: TaskStatus
+}
+
+type Toast = {
+  id: number
+  message: string
+  type: 'error' | 'success' | 'info'
 }
 
 type ValidationRules = {
@@ -93,6 +99,8 @@ const getMemberId = (member: Member | string) =>
 
 const getMemberName = (member: Member | string) =>
   typeof member === 'string' ? 'Member' : member.name
+
+const getAssignedUserId = (user: Task['assignedTo']) => user?.id || user?._id || ''
 
 const validateField = (label: string, value: string, rules: ValidationRules) => {
   const trimmed = value.trim()
@@ -136,7 +144,7 @@ function App() {
   const socketRef = useRef<Socket | null>(null)
   const [socketConnected, setSocketConnected] = useState(false)
   const [loading, setLoading] = useState(false)
-  const [error, setError] = useState('')
+  const [toast, setToast] = useState<Toast | null>(null)
   const [authMode, setAuthMode] = useState<'login' | 'register'>('login')
   const [authForm, setAuthForm] = useState({ name: '', email: '', password: '' })
   const [projectForm, setProjectForm] = useState({ title: '', description: '' })
@@ -156,6 +164,29 @@ function App() {
   const [draggedTaskId, setDraggedTaskId] = useState('')
 
   const selectedProject = projects.find((project) => project._id === selectedProjectId)
+  const selectedProjectMembers = selectedProject?.members ?? []
+  const realtimeStatus = selectedProject
+    ? socketConnected
+      ? 'Real-time connected'
+      : 'Real-time disconnected'
+    : 'No project selected'
+
+  const showToast = useCallback((message: string, type: Toast['type'] = 'error') => {
+    setToast({
+      id: Date.now(),
+      message,
+      type,
+    })
+  }, [])
+
+  useEffect(() => {
+    if (!toast) {
+      return
+    }
+
+    const timer = window.setTimeout(() => setToast(null), 3200)
+    return () => window.clearTimeout(timer)
+  }, [toast])
 
   const tasksByStatus = useMemo(
     () =>
@@ -232,20 +263,19 @@ function App() {
 
     const loadProjects = async () => {
       setLoading(true)
-      setError('')
       try {
         const body = await request<{ data: Project[] }>('/api/projects')
         setProjects(body.data)
         setSelectedProjectId((current) => current || body.data[0]?._id || '')
       } catch (err) {
-        setError(err instanceof Error ? err.message : 'Could not load projects')
+        showToast(err instanceof Error ? err.message : 'Could not load projects')
       } finally {
         setLoading(false)
       }
     }
 
     loadProjects()
-  }, [auth, request])
+  }, [auth, request, showToast])
 
   useEffect(() => {
     if (!auth) {
@@ -289,7 +319,6 @@ function App() {
 
     const loadWorkspace = async () => {
       setLoading(true)
-      setError('')
       try {
         const body = await request<{ data: Task[] }>(
           `/api/tasks?projectId=${selectedProjectId}&limit=100`,
@@ -297,7 +326,7 @@ function App() {
         setTasks(body.data)
         await loadProjectMeta()
       } catch (err) {
-        setError(err instanceof Error ? err.message : 'Could not load workspace')
+        showToast(err instanceof Error ? err.message : 'Could not load workspace')
       } finally {
         setLoading(false)
       }
@@ -309,7 +338,7 @@ function App() {
     return () => {
       socketRef.current?.emit('project:leave', selectedProjectId)
     }
-  }, [auth, loadProjectMeta, request, selectedProjectId])
+  }, [auth, loadProjectMeta, request, selectedProjectId, showToast])
 
   const validateAuthForm = () => {
     if (authMode === 'register') {
@@ -375,12 +404,11 @@ function App() {
     const validationError = validateAuthForm()
 
     if (validationError) {
-      setError(validationError)
+      showToast(validationError)
       return
     }
 
     setLoading(true)
-    setError('')
 
     try {
       const path = authMode === 'login' ? '/api/auth/login' : '/api/auth/register'
@@ -403,13 +431,13 @@ function App() {
       if (authMode === 'register') {
         setAuthMode('login')
         setAuthForm((current) => ({ ...current, password: '' }))
-        setError('Account created. Sign in to continue.')
+        showToast('Account created. Sign in to continue.', 'success')
         return
       }
 
       setAuth({ token: body.token!, user: body.user! })
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Authentication failed')
+      showToast(err instanceof Error ? err.message : 'Authentication failed')
     } finally {
       setLoading(false)
     }
@@ -420,11 +448,10 @@ function App() {
     const validationError = validateProjectForm()
 
     if (validationError) {
-      setError(validationError)
+      showToast(validationError)
       return
     }
 
-    setError('')
     try {
       const body = await request<{ data: Project }>('/api/projects', {
         method: 'POST',
@@ -437,7 +464,7 @@ function App() {
       setSelectedProjectId(body.data._id)
       setProjectForm({ title: '', description: '' })
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Could not create project')
+      showToast(err instanceof Error ? err.message : 'Could not create project')
     }
   }
 
@@ -450,11 +477,10 @@ function App() {
     const validationError = validateTaskForm(taskForm)
 
     if (validationError) {
-      setError(validationError)
+      showToast(validationError)
       return
     }
 
-    setError('')
     try {
       const body = await request<{ data: Task }>('/api/tasks', {
         method: 'POST',
@@ -469,7 +495,7 @@ function App() {
       setTaskForm({ title: '', description: '', assignedTo: '' })
       await loadProjectMeta()
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Could not create task')
+      showToast(err instanceof Error ? err.message : 'Could not create task')
     }
   }
 
@@ -483,11 +509,19 @@ function App() {
   }
 
   const updateTaskStatus = async (task: Task, status: TaskStatus) => {
-    setError('')
     try {
       await updateTask(task, { status })
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Could not update task')
+      showToast(err instanceof Error ? err.message : 'Could not update task')
+    }
+  }
+
+  const assignTaskMember = async (task: Task, assignedTo: string) => {
+    try {
+      await updateTask(task, { assignedTo: assignedTo || null })
+      showToast(assignedTo ? 'Task member updated.' : 'Task is now unassigned.', 'success')
+    } catch (err) {
+      showToast(err instanceof Error ? err.message : 'Could not assign task member')
     }
   }
 
@@ -500,11 +534,10 @@ function App() {
     const validationError = validateTaskForm(editForm)
 
     if (validationError) {
-      setError(validationError)
+      showToast(validationError)
       return
     }
 
-    setError('')
     try {
       await updateTask(editTask, {
         title: editForm.title.trim(),
@@ -514,7 +547,7 @@ function App() {
       })
       setEditTask(null)
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Could not save task')
+      showToast(err instanceof Error ? err.message : 'Could not save task')
     }
   }
 
@@ -523,13 +556,12 @@ function App() {
     setEditForm({
       title: task.title,
       description: task.description || '',
-      assignedTo: task.assignedTo?.id || '',
+      assignedTo: getAssignedUserId(task.assignedTo),
       status: task.status,
     })
   }
 
   const deleteTask = async (task: Task) => {
-    setError('')
     try {
       await request(`/api/tasks/${task._id}`, {
         method: 'DELETE',
@@ -537,7 +569,7 @@ function App() {
       setTasks((current) => current.filter((item) => item._id !== task._id))
       await loadProjectMeta()
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Could not delete task')
+      showToast(err instanceof Error ? err.message : 'Could not delete task')
     }
   }
 
@@ -555,11 +587,10 @@ function App() {
     })
 
     if (validationError) {
-      setError(validationError)
+      showToast(validationError)
       return
     }
 
-    setError('')
     try {
       const body = await request<{ data: Project }>(
         `/api/projects/${selectedProjectId}/members`,
@@ -574,7 +605,7 @@ function App() {
       setMemberEmail('')
       await loadProjectMeta()
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Could not add member')
+      showToast(err instanceof Error ? err.message : 'Could not add member')
     }
   }
 
@@ -663,7 +694,6 @@ function App() {
                 }
               />
             </label>
-            {error && <p className="notice">{error}</p>}
             <button className="primary" type="submit" disabled={loading}>
               {loading ? 'Please wait' : authMode === 'login' ? 'Sign in' : 'Create account'}
             </button>
@@ -740,7 +770,7 @@ function App() {
       <section className="workspace">
         <header className="topbar">
           <div>
-            <p className="eyebrow">{socketConnected ? 'Live' : 'Connecting'}</p>
+            <p className="eyebrow">{realtimeStatus}</p>
             <h1>{selectedProject?.title || 'Select a project'}</h1>
             <p>{selectedProject?.description || 'Create or choose a project to begin.'}</p>
           </div>
@@ -758,8 +788,6 @@ function App() {
             </form>
           )}
         </header>
-
-        {error && <p className="notice">{error}</p>}
 
         {selectedProject && (
           <form className="task-composer" onSubmit={createTask}>
@@ -787,7 +815,7 @@ function App() {
               }
             >
               <option value="">Unassigned</option>
-              {selectedProject.members.map((member) => (
+              {selectedProjectMembers.map((member) => (
                 <option key={getMemberId(member)} value={getMemberId(member)}>
                   {getMemberName(member)}
                 </option>
@@ -830,7 +858,22 @@ function App() {
                           ? `Assigned to ${task.assignedTo.name}`
                           : 'Unassigned'}
                       </small>
-                      <div className="task-actions">
+                      <label className="inline-field">
+                        Task member
+                        <select
+                          value={getAssignedUserId(task.assignedTo)}
+                          onChange={(event) => assignTaskMember(task, event.target.value)}
+                        >
+                          <option value="">Unassigned</option>
+                          {selectedProjectMembers.map((member) => (
+                            <option key={getMemberId(member)} value={getMemberId(member)}>
+                              {getMemberName(member)}
+                            </option>
+                          ))}
+                        </select>
+                      </label>
+                      <label className="inline-field">
+                        Status
                         <select
                           value={task.status}
                           onChange={(event) =>
@@ -839,10 +882,12 @@ function App() {
                         >
                           {statusOrder.map((option) => (
                             <option key={option} value={option}>
-                              {statusLabels[option]}
-                            </option>
-                          ))}
-                        </select>
+                            {statusLabels[option]}
+                          </option>
+                        ))}
+                      </select>
+                      </label>
+                      <div className="task-actions">
                         <button type="button" onClick={() => openTaskEdit(task)}>
                           Edit
                         </button>
@@ -863,16 +908,18 @@ function App() {
                 <h2>Notifications</h2>
                 <span>{notifications.length}</span>
               </div>
-              {notifications.length === 0 ? (
-                <p className="empty">No notifications yet.</p>
-              ) : (
-                notifications.map((notification) => (
-                  <article className="feed-item" key={notification._id}>
-                    <strong>{notification.message}</strong>
-                    <small>{formatDate(notification.createdAt)}</small>
-                  </article>
-                ))
-              )}
+              <div className="feed-list">
+                {notifications.length === 0 ? (
+                  <p className="empty">No notifications yet.</p>
+                ) : (
+                  notifications.map((notification) => (
+                    <article className="feed-item" key={notification._id}>
+                      <strong>{notification.message}</strong>
+                      <small>{formatDate(notification.createdAt)}</small>
+                    </article>
+                  ))
+                )}
+              </div>
             </section>
 
             <section className="panel">
@@ -880,18 +927,20 @@ function App() {
                 <h2>Activity</h2>
                 <span>{activities.length}</span>
               </div>
-              {activities.length === 0 ? (
-                <p className="empty">No activity yet.</p>
-              ) : (
-                activities.map((activity) => (
-                  <article className="feed-item" key={activity._id}>
-                    <strong>{activity.action.replaceAll('_', ' ')}</strong>
-                    <small>
-                      {activity.user?.name || 'System'} - {formatDate(activity.createdAt)}
-                    </small>
-                  </article>
-                ))
-              )}
+              <div className="feed-list">
+                {activities.length === 0 ? (
+                  <p className="empty">No activity yet.</p>
+                ) : (
+                  activities.map((activity) => (
+                    <article className="feed-item" key={activity._id}>
+                      <strong>{activity.action.replaceAll('_', ' ')}</strong>
+                      <small>
+                        {activity.user?.name || 'System'} - {formatDate(activity.createdAt)}
+                      </small>
+                    </article>
+                  ))
+                )}
+              </div>
             </section>
           </aside>
         </section>
@@ -938,7 +987,7 @@ function App() {
                 }
               >
                 <option value="">Unassigned</option>
-                {selectedProject.members.map((member) => (
+                {selectedProjectMembers.map((member) => (
                   <option key={getMemberId(member)} value={getMemberId(member)}>
                     {getMemberName(member)}
                   </option>
@@ -964,6 +1013,12 @@ function App() {
               Save task
             </button>
           </form>
+        </div>
+      )}
+
+      {toast && (
+        <div className={`toast ${toast.type}`} role="status" aria-live="polite">
+          {toast.message}
         </div>
       )}
     </main>
