@@ -227,7 +227,7 @@ Branching strategy: feature branches → PR → `main`. Direct pushes to `main` 
 
 - Frontend: _add deployed URL here_
 - Backend: _add deployed URL here_
-- Planning & Design doc: [`docs/planning-and-design.md`](docs/planning-and-design.md)
+- Planning & Design doc: [`docs/FRD.md`](docs/FRD.md)
 - Loom video: _add video URL here_
 
 ---
