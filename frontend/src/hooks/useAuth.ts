@@ -86,11 +86,19 @@ export const useAuth = (showToast: (msg: string, type?: 'error' | 'success' | 'i
         })
 
         if (authMode === 'register') {
-          setAuthMode('login')
-          setAuthForm((c) => ({ ...c, password: '' }))
-          showToast('Account created. Sign in to continue.', 'success')
-          return
-        }
+  const registeredEmail = authForm.email
+
+  setAuthMode('login')
+
+  setAuthForm({
+    name: '',
+    email: registeredEmail,
+    password: '',
+  })
+
+  showToast('Account created. Sign in to continue.', 'success')
+  return
+}
 
         setAuthState({ token: body.token!, user: body.user! })
       } catch (err) {

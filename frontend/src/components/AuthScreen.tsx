@@ -40,14 +40,22 @@ export const AuthScreen = ({
           <button
             type="button"
             className={authMode === 'login' ? 'active' : ''}
-            onClick={() => setAuthMode('login')}
+            onClick={() => {
+  setAuthMode('login')
+  setShowPassword(false)
+  setAuthForm({ name: '', email: '', password: '' })
+}}
           >
             Login
           </button>
           <button
             type="button"
             className={authMode === 'register' ? 'active' : ''}
-            onClick={() => setAuthMode('register')}
+            onClick={() => {
+  setAuthMode('register')
+  setShowPassword(false)
+  setAuthForm({ name: '', email: '', password: '' })
+}}
           >
             Register
           </button>
