@@ -173,62 +173,51 @@ VITE_SOCKET_URL=http://localhost:5001
 
 ## Deployment Steps
 
-### Backend (VM — DigitalOcean / Hetzner / Vultr)
+### Backend (Render)
 
-```bash
-# 1. Provision Ubuntu VM, point subdomain A record to VM IP
-
-# 2. Install dependencies
-sudo apt update && sudo apt install -y nodejs npm nginx certbot python3-certbot-nginx
-npm install -g pm2
-
-# 3. Clone repo, install, configure
-git clone <repo-url> && cd <repo>/backend
-cp .env.example .env   # set MONGO_URI, JWT_SECRET, CLIENT_URL, REDIS_URL
-npm ci
-
-# 4. Start with PM2
-pm2 start src/server.js --name pms-backend
-pm2 save && pm2 startup
-
-# 5. Nginx reverse proxy  (/etc/nginx/sites-available/pms-api)
-server {
-    server_name api.yourdomain.com;
-    location / {
-        proxy_pass http://localhost:5001;
-        proxy_http_version 1.1;
-        proxy_set_header Upgrade $http_upgrade;
-        proxy_set_header Connection "upgrade";
-        proxy_set_header Host $host;
-    }
-}
-
-# 6. Enable SSL
-sudo certbot --nginx -d api.yourdomain.com
-```
-
-### Frontend (Netlify / Vercel)
-
-```bash
-cd frontend
-npm run build          # outputs to dist/
-```
-
-Deploy `dist/` to Netlify or Vercel with these environment variables set in the dashboard:
+1. Push code to GitHub.
+2. Create a new **Web Service** on [Render](https://render.com), connect the repo, set root directory to `backend`.
+3. Set build command `npm ci` and start command `node src/server.js`.
+4. Add environment variables in the Render dashboard:
 
 ```
-VITE_API_URL=https://api.yourdomain.com
-VITE_SOCKET_URL=https://api.yourdomain.com
+MONGO_URI=<your Atlas URI>
+JWT_SECRET=<secret>
+CLIENT_URL=https://<your-vercel-app>.vercel.app
+REDIS_URL=<your Redis Cloud URL>
 ```
 
-### CI/CD (GitHub Actions)
+5. Copy the **Deploy Hook URL** from Render → Settings → Deploy Hook. Add it as `RENDER_DEPLOY_HOOK_URL` in GitHub repository secrets.
 
-The pipeline runs on every push to `main`:
+### Frontend (Vercel)
 
-1. **Lint** — `eslint .` on the frontend.
-2. **Build** — `tsc -b && vite build` to catch type errors.
-3. **Backend check** — `npm ci` to verify the dependency tree.
-4. **Deploy** — SSH into the VM, pull latest, `npm ci`, restart PM2 (backend); trigger Netlify/Vercel deploy hook (frontend).
+1. Import the GitHub repo in [Vercel](https://vercel.com), set root directory to `frontend`.
+2. Vercel auto-detects Vite — no build command changes needed.
+3. Add environment variables in the Vercel dashboard:
+
+```
+VITE_API_URL=https://<your-render-service>.onrender.com
+VITE_SOCKET_URL=https://<your-render-service>.onrender.com
+```
+
+4. Go to Vercel → Settings → Git → Deploy Hooks, create a hook, and add it as `VERCEL_DEPLOY_HOOK_URL` in GitHub repository secrets.
+
+### Redis (Redis Cloud — free tier)
+
+1. Sign up at [redis.io/try-free](https://redis.io/try-free) — no credit card needed.
+2. Create a free database, copy the `redis://...` connection string.
+3. Set it as `REDIS_URL` in Render environment variables.
+
+With `REDIS_URL` set, the Socket.IO Redis adapter activates automatically — no code changes needed.
+
+### CI/CD (GitHub Actions — `.github/workflows/ci.yml`)
+
+The pipeline runs on every push and PR to `main`:
+
+1. **Frontend lint** — `eslint .`
+2. **Frontend build** — `tsc -b && vite build` (catches type errors)
+3. **Backend install check** — `npm ci` (validates the dependency tree)
+4. **Deploy** — on merge to `main`, hits the Render deploy hook (backend) and Vercel deploy hook (frontend) via `curl`.
 
 Branching strategy: feature branches → PR → `main`. Direct pushes to `main` are blocked. The CI gate must pass before merge.
 
