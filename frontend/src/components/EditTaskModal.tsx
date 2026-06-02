@@ -20,7 +20,6 @@ type Props = {
 }
 
 export const EditTaskModal = ({
-  task: _task,
   editForm,
   setEditForm,
   members,
