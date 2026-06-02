@@ -110,9 +110,19 @@ export const useAuth = (showToast: (msg: string, type?: 'error' | 'success' | 'i
     [authMode, authForm, validateAuthForm, showToast],
   )
 
-  const logout = useCallback(() => {
-    setAuthState(null)
-  }, [])
+ const logout = useCallback(() => {
+  setAuthState(null)
+
+  setAuthForm({
+    name: '',
+    email: '',
+    password: '',
+  })
+
+  setShowPassword(false)
+
+  setAuthMode('login')
+}, [])
 
   return {
     auth,
