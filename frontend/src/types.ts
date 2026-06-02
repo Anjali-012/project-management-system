@@ -61,4 +61,10 @@ export type Toast = {
   type: 'error' | 'success' | 'info'
 }
 
-export type AuthMode = 'login' | 'register'
+export type ValidationRules = {
+  min?: number
+  max?: number
+  pattern?: RegExp
+  patternMessage?: string
+  required?: boolean
+}

@@ -1,17 +1,21 @@
 import { API_URL } from '../constants'
-import type { AuthState } from '../types'
 
-export const createRequest =
-  (auth: AuthState | null) =>
-  async <T,>(path: string, options: RequestInit = {}): Promise<T> => {
+/**
+ * Creates a pre-configured fetch wrapper bound to the current auth token.
+ * Returns a `request` function identical to the one previously inlined in App.tsx
+ * but now shareable across hooks and components.
+ */
+export const createApiClient = (token?: string) => {
+  const request = async <T,>(path: string, options: RequestInit = {}): Promise<T> => {
     const response = await fetch(`${API_URL}${path}`, {
       ...options,
       headers: {
         'Content-Type': 'application/json',
-        ...(auth?.token ? { Authorization: `Bearer ${auth.token}` } : {}),
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
         ...options.headers,
       },
     })
+
     const body = await response.json()
 
     if (!response.ok) {
@@ -20,3 +24,8 @@ export const createRequest =
 
     return body
   }
+
+  return { request }
+}
+
+export type ApiClient = ReturnType<typeof createApiClient>

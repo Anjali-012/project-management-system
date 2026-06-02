@@ -1,4 +1,4 @@
-export const formatDate = (value: string) =>
+export const formatDate = (value: string): string =>
   new Intl.DateTimeFormat('en', {
     dateStyle: 'medium',
     timeStyle: 'short',
