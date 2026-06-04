@@ -16,14 +16,26 @@ export type Project = {
 }
 
 export type TaskStatus = 'todo' | 'in-progress' | 'done'
+export type TaskPriority = 'low' | 'medium' | 'high' | 'urgent'
+
+export type Comment = {
+  _id: string
+  text: string
+  user: Pick<User, 'id' | 'name' | 'email'> & { _id?: string }
+  createdAt: string
+}
 
 export type Task = {
   _id: string
   title: string
   description?: string
   status: TaskStatus
+  priority: TaskPriority
+  dueDate?: string | null
   project: { _id: string; title: string } | string
   assignedTo?: (Pick<User, 'id' | 'name' | 'email'> & { _id?: string }) | null
+  createdBy?: Pick<User, 'id' | 'name' | 'email'> & { _id?: string }
+  comments: Comment[]
   createdAt: string
 }
 
@@ -53,6 +65,8 @@ export type TaskUpdatePayload = {
   description?: string
   assignedTo?: string | null
   status?: TaskStatus
+  priority?: TaskPriority
+  dueDate?: string | null
 }
 
 export type Toast = {
@@ -67,4 +81,13 @@ export type ValidationRules = {
   pattern?: RegExp
   patternMessage?: string
   required?: boolean
+}
+
+export type PresenceUser = { id: string; name: string }
+
+export type TaskFilters = {
+  search: string
+  status: TaskStatus | ''
+  priority: TaskPriority | ''
+  assignedTo: string
 }

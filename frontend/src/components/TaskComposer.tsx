@@ -1,8 +1,15 @@
 import type { FormEvent } from 'react'
-import type { Member } from '../types'
+import type { Member, TaskPriority } from '../types'
 import { getMemberId, getMemberName } from '../utils/member'
+import { PRIORITY_ORDER, PRIORITY_LABELS } from '../constants'
 
-type TaskForm = { title: string; description: string; assignedTo: string }
+export type TaskForm = {
+  title: string
+  description: string
+  assignedTo: string
+  priority: TaskPriority
+  dueDate: string
+}
 
 type Props = {
   taskForm: TaskForm
@@ -14,9 +21,7 @@ type Props = {
 export const TaskComposer = ({ taskForm, setTaskForm, members, onCreateTask }: Props) => (
   <form className="task-composer" onSubmit={onCreateTask}>
     <input
-      required
-      minLength={3}
-      maxLength={100}
+      required minLength={3} maxLength={100}
       pattern="[A-Za-z0-9][A-Za-z0-9 .,'()/_-]*"
       placeholder="Task title"
       value={taskForm.title}
@@ -27,6 +32,20 @@ export const TaskComposer = ({ taskForm, setTaskForm, members, onCreateTask }: P
       placeholder="Description"
       value={taskForm.description}
       onChange={(e) => setTaskForm({ ...taskForm, description: e.target.value })}
+    />
+    <select
+      value={taskForm.priority}
+      onChange={(e) => setTaskForm({ ...taskForm, priority: e.target.value as TaskPriority })}
+    >
+      {PRIORITY_ORDER.map((p) => (
+        <option key={p} value={p}>{PRIORITY_LABELS[p]}</option>
+      ))}
+    </select>
+    <input
+      type="date"
+      title="Due date"
+      value={taskForm.dueDate}
+      onChange={(e) => setTaskForm({ ...taskForm, dueDate: e.target.value })}
     />
     <select
       value={taskForm.assignedTo}

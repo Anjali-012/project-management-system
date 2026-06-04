@@ -44,23 +44,41 @@ const initSocket = (server) => {
   });
 
   io.on("connection", (socket) => {
+    // presence: track which users are in which project room
+    const broadcastPresence = async (projectId) => {
+      const room = io.sockets.adapter.rooms.get(`project:${projectId}`);
+      if (!room) return;
+
+      // collect unique userIds from all sockets in the room
+      const userIds = [];
+      const seen = new Set();
+      for (const sid of room) {
+        const s = io.sockets.sockets.get(sid);
+        if (s?.user?.userId && !seen.has(s.user.userId)) {
+          seen.add(s.user.userId);
+          userIds.push(s.user.userId);
+        }
+      }
+
+      // batch-fetch names from DB
+      const User = require("../models/user.model");
+      const dbUsers = await User.find({ _id: { $in: userIds } }, "name").lean();
+      const nameMap = Object.fromEntries(dbUsers.map((u) => [u._id.toString(), u.name]));
+
+      const users = userIds.map((id) => ({ id, name: nameMap[id] ?? "Member" }));
+      io.to(`project:${projectId}`).emit("presence:update", { projectId, users });
+    };
+
     socket.on("project:join", async (projectId, ack) => {
       try {
         const project = await Project.findById(projectId);
-
-        if (!project) {
-          throw new Error("Project not found");
-        }
-
+        if (!project) throw new Error("Project not found");
         const isMember = project.members.some(
           (memberId) => memberId.toString() === socket.user.userId,
         );
-
-        if (!isMember) {
-          throw new Error("Not a project member");
-        }
-
+        if (!isMember) throw new Error("Not a project member");
         socket.join(`project:${projectId}`);
+        broadcastPresence(projectId).catch(() => undefined);
         ack?.({ ok: true });
       } catch (error) {
         ack?.({ ok: false, message: error.message });
@@ -69,6 +87,16 @@ const initSocket = (server) => {
 
     socket.on("project:leave", (projectId) => {
       socket.leave(`project:${projectId}`);
+      broadcastPresence(projectId).catch(() => undefined);
+    });
+
+    socket.on("disconnecting", () => {
+      for (const room of socket.rooms) {
+        if (room.startsWith("project:")) {
+          const projectId = room.replace("project:", "");
+          setImmediate(() => broadcastPresence(projectId).catch(() => undefined));
+        }
+      }
     });
   });
 

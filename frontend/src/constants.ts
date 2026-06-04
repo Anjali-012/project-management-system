@@ -1,4 +1,4 @@
-import type { TaskStatus } from './types'
+import type { TaskPriority, TaskStatus } from './types'
 
 export const API_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:5001'
 export const SOCKET_URL = import.meta.env.VITE_SOCKET_URL ?? API_URL
@@ -10,6 +10,15 @@ export const STATUS_LABELS: Record<TaskStatus, string> = {
 }
 
 export const STATUS_ORDER: TaskStatus[] = ['todo', 'in-progress', 'done']
+
+export const PRIORITY_LABELS: Record<TaskPriority, string> = {
+  low: 'Low',
+  medium: 'Medium',
+  high: 'High',
+  urgent: 'Urgent',
+}
+
+export const PRIORITY_ORDER: TaskPriority[] = ['low', 'medium', 'high', 'urgent']
 
 // Validation patterns
 export const ALPHA_SPACE_PATTERN = /^[A-Za-z ]+$/

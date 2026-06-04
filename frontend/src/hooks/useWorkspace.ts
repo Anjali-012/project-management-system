@@ -12,13 +12,20 @@ import type {
   Activity,
   AuthState,
   Notification,
+  PresenceUser,
   Project,
   Task,
+  TaskFilters,
+  TaskPriority,
   TaskStatus,
   TaskUpdatePayload,
 } from '../types'
 import { getMemberId, getAssignedUserId } from '../utils/member'
 import { validateField } from '../utils/validation'
+import type { EditForm } from '../components/EditTaskModal'
+import type { TaskForm } from '../components/TaskComposer'
+
+const EMPTY_FILTERS: TaskFilters = { search: '', status: '', priority: '', assignedTo: '' }
 
 export const useWorkspace = (
   auth: AuthState | null,
@@ -33,21 +40,22 @@ export const useWorkspace = (
   const [memberEmail, setMemberEmail] = useState('')
   const [draggedTaskId, setDraggedTaskId] = useState('')
   const [projectForm, setProjectForm] = useState({ title: '', description: '' })
-  const [taskForm, setTaskForm] = useState({ title: '', description: '', assignedTo: '' })
-  const [editTask, setEditTask] = useState<Task | null>(null)
-  const [editForm, setEditForm] = useState({
-    title: '',
-    description: '',
-    assignedTo: '',
-    status: 'todo' as TaskStatus,
+  const [taskForm, setTaskForm] = useState<TaskForm>({
+    title: '', description: '', assignedTo: '', priority: 'medium', dueDate: '',
   })
+  const [editTask, setEditTask] = useState<Task | null>(null)
+  const [editForm, setEditForm] = useState<EditForm>({
+    title: '', description: '', assignedTo: '', status: 'todo', priority: 'medium', dueDate: '',
+  })
+  const [commentTask, setCommentTask] = useState<Task | null>(null)
+  const [filters, setFilters] = useState<TaskFilters>(EMPTY_FILTERS)
+  const [presence, setPresence] = useState<PresenceUser[]>([])
   const socketRef = useRef<Socket | null>(null)
   const [socketConnected, setSocketConnected] = useState(false)
 
   const selectedProject = projects.find((p) => p._id === selectedProjectId)
   const selectedProjectMembers = selectedProject?.members ?? []
 
-  // Build a request helper that always uses the latest token
   const { request } = useMemo(() => createApiClient(auth?.token), [auth?.token])
 
   // ── Helpers ────────────────────────────────────────────────────────────────
@@ -55,10 +63,10 @@ export const useWorkspace = (
   const upsertTask = useCallback((task: Task) => {
     setTasks((current) => {
       const exists = current.some((t) => t._id === task._id)
-      return exists
-        ? current.map((t) => (t._id === task._id ? task : t))
-        : [task, ...current]
+      return exists ? current.map((t) => (t._id === task._id ? task : t)) : [task, ...current]
     })
+    // keep comment panel in sync
+    setCommentTask((prev) => (prev?._id === task._id ? task : prev))
   }, [])
 
   const loadProjectMeta = useCallback(async () => {
@@ -71,24 +79,22 @@ export const useWorkspace = (
     setNotifications(notificationBody.data.slice(0, 8))
   }, [auth, request, selectedProjectId])
 
-  // ── Socket setup ───────────────────────────────────────────────────────────
+  // ── Socket ─────────────────────────────────────────────────────────────────
 
   useEffect(() => {
     if (!auth) return
 
     const socket = io(SOCKET_URL, { auth: { token: auth.token } })
 
-    socket.on('task:created', (task: Task) => {
-      upsertTask(task)
-      loadProjectMeta().catch(() => undefined)
-    })
-    socket.on('task:updated', (task: Task) => {
-      upsertTask(task)
-      loadProjectMeta().catch(() => undefined)
-    })
+    socket.on('task:created', (task: Task) => { upsertTask(task); loadProjectMeta().catch(() => undefined) })
+    socket.on('task:updated', (task: Task) => { upsertTask(task); loadProjectMeta().catch(() => undefined) })
     socket.on('task:deleted', ({ id }: { id: string }) => {
       setTasks((current) => current.filter((t) => t._id !== id))
+      setCommentTask((prev) => (prev?._id === id ? null : prev))
       loadProjectMeta().catch(() => undefined)
+    })
+    socket.on('presence:update', ({ projectId, users }: { projectId: string; users: PresenceUser[] }) => {
+      if (projectId === selectedProjectId) setPresence(users)
     })
     socket.on('connect', () => setSocketConnected(true))
     socket.on('disconnect', () => setSocketConnected(false))
@@ -100,14 +106,25 @@ export const useWorkspace = (
       socketRef.current = null
       setSocketConnected(false)
     }
-  }, [auth, loadProjectMeta, upsertTask])
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [auth])
 
-  // ── Load projects on login ─────────────────────────────────────────────────
+  // re-attach presence listener when selectedProjectId changes
+  useEffect(() => {
+    const socket = socketRef.current
+    if (!socket) return
+    const handler = ({ projectId, users }: { projectId: string; users: PresenceUser[] }) => {
+      if (projectId === selectedProjectId) setPresence(users)
+    }
+    socket.on('presence:update', handler)
+    return () => { socket.off('presence:update', handler) }
+  }, [selectedProjectId])
+
+  // ── Load projects ──────────────────────────────────────────────────────────
 
   useEffect(() => {
     if (!auth) return
-
-    const loadProjects = async () => {
+    const load = async () => {
       setLoading(true)
       try {
         const body = await request<{ data: Project[] }>('/api/projects')
@@ -119,21 +136,17 @@ export const useWorkspace = (
         setLoading(false)
       }
     }
-
-    loadProjects()
+    load()
   }, [auth, request, showToast])
 
-  // ── Load workspace when project changes ────────────────────────────────────
+  // ── Load workspace ─────────────────────────────────────────────────────────
 
   useEffect(() => {
     if (!auth || !selectedProjectId) return
-
-    const loadWorkspace = async () => {
+    const load = async () => {
       setLoading(true)
       try {
-        const body = await request<{ data: Task[] }>(
-          `/api/tasks?projectId=${selectedProjectId}&limit=100`,
-        )
+        const body = await request<{ data: Task[] }>(`/api/tasks?projectId=${selectedProjectId}&limit=100`)
         setTasks(body.data)
         await loadProjectMeta()
       } catch (err) {
@@ -142,36 +155,28 @@ export const useWorkspace = (
         setLoading(false)
       }
     }
-
+    setPresence([])
+    setFilters(EMPTY_FILTERS)
     socketRef.current?.emit('project:join', selectedProjectId)
-    loadWorkspace()
-
-    return () => {
-      socketRef.current?.emit('project:leave', selectedProjectId)
-    }
+    load()
+    return () => { socketRef.current?.emit('project:leave', selectedProjectId) }
   }, [auth, loadProjectMeta, request, selectedProjectId, showToast])
 
-  // ── Validation helpers ─────────────────────────────────────────────────────
+  // ── Validation ─────────────────────────────────────────────────────────────
 
   const validateProjectForm = () =>
     validateField('Project title', projectForm.title, {
-      required: true,
-      min: 3,
-      max: 80,
+      required: true, min: 3, max: 80,
       pattern: ALPHA_NUMERIC_TEXT_PATTERN,
       patternMessage: 'Project title must start with a letter or number.',
-    }) ||
-    validateField('Project description', projectForm.description, { max: 300 })
+    }) || validateField('Project description', projectForm.description, { max: 300 })
 
-  const validateTaskForm = (form: typeof taskForm | typeof editForm) =>
+  const validateTaskForm = (form: { title: string; description: string }) =>
     validateField('Task title', form.title, {
-      required: true,
-      min: 3,
-      max: 100,
+      required: true, min: 3, max: 100,
       pattern: ALPHA_NUMERIC_TEXT_PATTERN,
       patternMessage: 'Task title must start with a letter or number.',
-    }) ||
-    validateField('Task description', form.description, { max: 500 })
+    }) || validateField('Task description', form.description, { max: 500 })
 
   // ── Actions ────────────────────────────────────────────────────────────────
 
@@ -179,14 +184,10 @@ export const useWorkspace = (
     event.preventDefault()
     const err = validateProjectForm()
     if (err) { showToast(err); return }
-
     try {
       const body = await request<{ data: Project }>('/api/projects', {
         method: 'POST',
-        body: JSON.stringify({
-          title: projectForm.title.trim(),
-          description: projectForm.description.trim(),
-        }),
+        body: JSON.stringify({ title: projectForm.title.trim(), description: projectForm.description.trim() }),
       })
       setProjects((current) => [body.data, ...current])
       setSelectedProjectId(body.data._id)
@@ -199,10 +200,8 @@ export const useWorkspace = (
   const createTask = async (event: FormEvent) => {
     event.preventDefault()
     if (!selectedProjectId) return
-
     const err = validateTaskForm(taskForm)
     if (err) { showToast(err); return }
-
     try {
       const body = await request<{ data: Task }>('/api/tasks', {
         method: 'POST',
@@ -211,10 +210,12 @@ export const useWorkspace = (
           description: taskForm.description.trim(),
           projectId: selectedProjectId,
           assignedTo: taskForm.assignedTo || undefined,
+          priority: taskForm.priority,
+          dueDate: taskForm.dueDate || undefined,
         }),
       })
       upsertTask(body.data)
-      setTaskForm({ title: '', description: '', assignedTo: '' })
+      setTaskForm({ title: '', description: '', assignedTo: '', priority: 'medium', dueDate: '' })
       await loadProjectMeta()
     } catch (err) {
       showToast(err instanceof Error ? err.message : 'Could not create task')
@@ -231,11 +232,8 @@ export const useWorkspace = (
   }
 
   const updateTaskStatus = async (task: Task, status: TaskStatus) => {
-    try {
-      await updateTask(task, { status })
-    } catch (err) {
-      showToast(err instanceof Error ? err.message : 'Could not update task')
-    }
+    try { await updateTask(task, { status }) }
+    catch (err) { showToast(err instanceof Error ? err.message : 'Could not update task') }
   }
 
   const assignTaskMember = async (task: Task, assignedTo: string) => {
@@ -250,16 +248,16 @@ export const useWorkspace = (
   const saveTaskEdit = async (event: FormEvent) => {
     event.preventDefault()
     if (!editTask) return
-
     const err = validateTaskForm(editForm)
     if (err) { showToast(err); return }
-
     try {
       await updateTask(editTask, {
         title: editForm.title.trim(),
         description: editForm.description.trim(),
         assignedTo: editForm.assignedTo || null,
         status: editForm.status,
+        priority: editForm.priority,
+        dueDate: editForm.dueDate || null,
       })
       setEditTask(null)
     } catch (err) {
@@ -274,6 +272,8 @@ export const useWorkspace = (
       description: task.description || '',
       assignedTo: getAssignedUserId(task.assignedTo),
       status: task.status,
+      priority: task.priority ?? 'medium',
+      dueDate: task.dueDate ? task.dueDate.slice(0, 10) : '',
     })
   }
 
@@ -292,23 +292,18 @@ export const useWorkspace = (
   const addMember = async (event: FormEvent) => {
     event.preventDefault()
     if (!selectedProjectId) return
-
     const err = validateField('Member email', memberEmail, {
-      required: true,
-      max: 120,
+      required: true, max: 120,
       pattern: EMAIL_PATTERN,
       patternMessage: 'Enter a valid member email address.',
     })
     if (err) { showToast(err); return }
-
     try {
-      const body = await request<{ data: Project }>(
-        `/api/projects/${selectedProjectId}/members`,
-        { method: 'POST', body: JSON.stringify({ email: memberEmail.trim() }) },
-      )
-      setProjects((current) =>
-        current.map((p) => (p._id === body.data._id ? body.data : p)),
-      )
+      const body = await request<{ data: Project }>(`/api/projects/${selectedProjectId}/members`, {
+        method: 'POST',
+        body: JSON.stringify({ email: memberEmail.trim() }),
+      })
+      setProjects((current) => current.map((p) => (p._id === body.data._id ? body.data : p)))
       setMemberEmail('')
       await loadProjectMeta()
     } catch (err) {
@@ -323,72 +318,76 @@ export const useWorkspace = (
     updateTaskStatus(task, status)
   }
 
+  const addComment = async (taskId: string, text: string) => {
+    try {
+      const body = await request<{ data: Task }>(`/api/tasks/${taskId}/comments`, {
+        method: 'POST',
+        body: JSON.stringify({ text }),
+      })
+      upsertTask(body.data)
+    } catch (err) {
+      showToast(err instanceof Error ? err.message : 'Could not add comment')
+      throw err
+    }
+  }
+
   const logout = () => {
     setSelectedProjectId('')
     setProjects([])
     setTasks([])
     setActivities([])
     setNotifications([])
+    setPresence([])
+    setCommentTask(null)
   }
 
   // ── Derived ────────────────────────────────────────────────────────────────
 
+  const filteredTasks = useMemo(() => {
+    const { search, status, priority, assignedTo } = filters
+    return tasks.filter((t) => {
+      if (status && t.status !== status) return false
+      if (priority && (t.priority ?? 'medium') !== priority) return false
+      if (assignedTo) {
+        const id = t.assignedTo?.id || t.assignedTo?._id || ''
+        if (id !== assignedTo) return false
+      }
+      if (search) {
+        const s = search.toLowerCase()
+        if (!t.title.toLowerCase().includes(s) && !(t.description?.toLowerCase().includes(s))) return false
+      }
+      return true
+    })
+  }, [tasks, filters])
+
   const tasksByStatus = useMemo(
     () =>
       STATUS_ORDER.reduce(
-        (groups, status) => ({
-          ...groups,
-          [status]: tasks.filter((t) => t.status === status),
-        }),
+        (groups, status) => ({ ...groups, [status]: filteredTasks.filter((t) => t.status === status) }),
         {} as Record<TaskStatus, Task[]>,
       ),
-    [tasks],
+    [filteredTasks],
   )
 
   const realtimeStatus = selectedProject
-    ? socketConnected
-      ? 'Real-time connected'
-      : 'Real-time disconnected'
+    ? socketConnected ? 'Real-time connected' : 'Real-time disconnected'
     : 'No project selected'
 
   return {
-    // State
-    projects,
-    selectedProjectId,
-    setSelectedProjectId,
-    selectedProject,
+    projects, selectedProjectId, setSelectedProjectId, selectedProject,
     selectedProjectMembers: selectedProjectMembers.map(getMemberId),
     selectedProjectMembersRaw: selectedProjectMembers,
-    tasks,
-    tasksByStatus,
-    activities,
-    notifications,
-    loading,
-    socketConnected,
-    realtimeStatus,
-    // Forms
-    projectForm,
-    setProjectForm,
-    taskForm,
-    setTaskForm,
-    editTask,
-    editForm,
-    setEditForm,
-    memberEmail,
-    setMemberEmail,
-    draggedTaskId,
-    setDraggedTaskId,
-    // Actions
-    createProject,
-    createTask,
-    updateTaskStatus,
-    assignTaskMember,
-    saveTaskEdit,
-    openTaskEdit,
-    closeTaskEdit,
-    deleteTask,
-    addMember,
-    handleDrop,
-    logout,
+    tasks, tasksByStatus, activities, notifications,
+    loading, socketConnected, realtimeStatus, presence,
+    projectForm, setProjectForm,
+    taskForm, setTaskForm,
+    editTask, editForm, setEditForm,
+    commentTask, setCommentTask,
+    memberEmail, setMemberEmail,
+    draggedTaskId, setDraggedTaskId,
+    filters, setFilters,
+    createProject, createTask, updateTaskStatus, assignTaskMember,
+    saveTaskEdit, openTaskEdit, closeTaskEdit, deleteTask,
+    addMember, handleDrop, addComment, logout,
   }
 }

@@ -1,5 +1,6 @@
 import type { FormEvent } from 'react'
-import type { Project } from '../types'
+import type { PresenceUser, Project } from '../types'
+import { PresencePill } from './PresencePill'
 
 type Props = {
   selectedProject?: Project
@@ -7,14 +8,11 @@ type Props = {
   memberEmail: string
   setMemberEmail: (v: string) => void
   onAddMember: (e: FormEvent) => void
+  presence: PresenceUser[]
 }
 
 export const Topbar = ({
-  selectedProject,
-  realtimeStatus,
-  memberEmail,
-  setMemberEmail,
-  onAddMember,
+  selectedProject, realtimeStatus, memberEmail, setMemberEmail, onAddMember, presence,
 }: Props) => (
   <header className="topbar">
     <div>
@@ -23,18 +21,20 @@ export const Topbar = ({
       <p>{selectedProject?.description || 'Create or choose a project to begin.'}</p>
     </div>
 
-    {selectedProject && (
-      <form className="member-form" onSubmit={onAddMember}>
-        <input
-          required
-          maxLength={120}
-          type="email"
-          placeholder="member@company.com"
-          value={memberEmail}
-          onChange={(e) => setMemberEmail(e.target.value)}
-        />
-        <button type="submit">Add member</button>
-      </form>
-    )}
+    <div className="topbar-right">
+      {selectedProject && <PresencePill users={presence} />}
+
+      {selectedProject && (
+        <form className="member-form" onSubmit={onAddMember}>
+          <input
+            required maxLength={120} type="email"
+            placeholder="member@company.com"
+            value={memberEmail}
+            onChange={(e) => setMemberEmail(e.target.value)}
+          />
+          <button type="submit">Add member</button>
+        </form>
+      )}
+    </div>
   </header>
 )

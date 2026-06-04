@@ -8,69 +8,37 @@ const createTask = asyncHandler(async (req, res) => {
     userId: req.user.userId,
     project: req.project,
   });
-
   emitToProject(task.project._id || task.project, "task:created", task);
-
-  res.status(201).json({
-    success: true,
-    message: "Task created successfully",
-    data: task,
-  });
+  res.status(201).json({ success: true, message: "Task created successfully", data: task });
 });
 
 const getTasks = asyncHandler(async (req, res) => {
-  const { tasks, totalTasks, currentPage, totalPages } = await taskService.getTasks(
-    req.query,
-  );
-
-  res.status(200).json({
-    success: true,
-    currentPage,
-    totalPages,
-    totalTasks,
-    count: tasks.length,
-    data: tasks,
-  });
+  const { tasks, totalTasks, currentPage, totalPages } = await taskService.getTasks(req.query);
+  res.status(200).json({ success: true, currentPage, totalPages, totalTasks, count: tasks.length, data: tasks });
 });
 
 const updateTask = asyncHandler(async (req, res) => {
   const updatedTask = await taskService.updateTask({
-    task: req.task,
-    payload: req.body,
-    userId: req.user.userId,
-    project: req.project,
+    task: req.task, payload: req.body, userId: req.user.userId, project: req.project,
   });
-
-  emitToProject(
-    updatedTask.project._id || updatedTask.project,
-    "task:updated",
-    updatedTask,
-  );
-
-  res.status(200).json({
-    success: true,
-    message: "Task updated successfully",
-    data: updatedTask,
-  });
+  emitToProject(updatedTask.project._id || updatedTask.project, "task:updated", updatedTask);
+  res.status(200).json({ success: true, message: "Task updated successfully", data: updatedTask });
 });
 
 const deleteTask = asyncHandler(async (req, res) => {
-  const task = await taskService.deleteTask({
-    task: req.task,
-    user: req.user,
-  });
-
+  const task = await taskService.deleteTask({ task: req.task, user: req.user });
   emitToProject(task.project, "task:deleted", { id: task._id, project: task.project });
-
-  res.status(200).json({
-    success: true,
-    message: "Task deleted successfully",
-  });
+  res.status(200).json({ success: true, message: "Task deleted successfully" });
 });
 
-module.exports = {
-  createTask,
-  getTasks,
-  updateTask,
-  deleteTask,
-};
+const addComment = asyncHandler(async (req, res) => {
+  const task = await taskService.addComment({
+    task: req.task,
+    userId: req.user.userId,
+    text: req.body.text,
+  });
+  emitToProject(task.project._id || task.project, "task:updated", task);
+  res.status(201).json({ success: true, message: "Comment added", data: task });
+});
+
+module.exports = { createTask, getTasks, updateTask, deleteTask, addComment };

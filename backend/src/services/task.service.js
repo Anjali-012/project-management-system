@@ -8,6 +8,7 @@ const populateTask = (query) =>
   query
     .populate("assignedTo", "name email")
     .populate("createdBy", "name email")
+    .populate("comments.user", "name email")
     .populate("project", "title");
 
 const ensureAssigneeIsMember = (project, assignedTo) => {
@@ -25,14 +26,13 @@ const ensureAssigneeIsMember = (project, assignedTo) => {
 };
 
 const createTask = async ({ payload, userId, project }) => {
-  const { title, description, projectId, assignedTo, status } = payload;
+  const { title, description, projectId, assignedTo, status, priority, dueDate } = payload;
 
   ensureAssigneeIsMember(project, assignedTo);
 
   const task = await Task.create({
-    title,
-    description,
-    status,
+    title, description, status, priority,
+    dueDate: dueDate || null,
     project: projectId,
     assignedTo,
     createdBy: userId,
@@ -60,32 +60,15 @@ const createTask = async ({ payload, userId, project }) => {
 };
 
 const getTasks = async ({
-  projectId,
-  status,
-  search,
-  page = 1,
-  limit = 50,
-  sortBy = "createdAt",
-  order = "desc",
+  projectId, status, search, priority, assignedTo,
+  page = 1, limit = 50, sortBy = "createdAt", order = "desc",
 }) => {
-  const filter = {
-    isDeleted: false,
-  };
-
-  if (projectId) {
-    filter.project = projectId;
-  }
-
-  if (status) {
-    filter.status = status;
-  }
-
-  if (search) {
-    filter.title = {
-      $regex: search,
-      $options: "i",
-    };
-  }
+  const filter = { isDeleted: false };
+  if (projectId) filter.project = projectId;
+  if (status) filter.status = status;
+  if (priority) filter.priority = priority;
+  if (assignedTo) filter.assignedTo = assignedTo;
+  if (search) filter.title = { $regex: search, $options: "i" };
 
   const pageNumber = Number(page);
   const limitNumber = Number(limit);
@@ -178,10 +161,25 @@ const findProjectForTask = async (task) => {
   return project;
 };
 
+const addComment = async ({ task, userId, text }) => {
+  task.comments.push({ user: userId, text });
+  await task.save();
+
+  await logActivity({
+    project: task.project,
+    user: userId,
+    action: "COMMENT_ADDED",
+    metadata: { taskId: task._id, taskTitle: task.title },
+  });
+
+  return populateTask(Task.findById(task._id));
+};
+
 module.exports = {
   createTask,
   deleteTask,
   findProjectForTask,
   getTasks,
   updateTask,
+  addComment,
 };
