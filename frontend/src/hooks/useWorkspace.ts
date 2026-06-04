@@ -143,6 +143,8 @@ export const useWorkspace = (
   useEffect(() => {
     if (!auth || !selectedProjectId) return
     const load = async () => {
+      setPresence([])
+      setFilters(EMPTY_FILTERS)
       setLoading(true)
       try {
         const body = await request<{ data: Task[] }>(`/api/tasks?projectId=${selectedProjectId}&limit=100`)
@@ -154,8 +156,6 @@ export const useWorkspace = (
         setLoading(false)
       }
     }
-    setPresence([])
-    setFilters(EMPTY_FILTERS)
     socketRef.current?.emit('project:join', selectedProjectId)
     load()
     return () => { socketRef.current?.emit('project:leave', selectedProjectId) }
