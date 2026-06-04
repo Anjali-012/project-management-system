@@ -16,7 +16,6 @@ import type {
   Project,
   Task,
   TaskFilters,
-  TaskPriority,
   TaskStatus,
   TaskUpdatePayload,
 } from '../types'

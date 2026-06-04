@@ -4,12 +4,11 @@ import { formatDate } from '../utils/date'
 
 type Props = {
   task: Task
-  currentUserId: string
   onAddComment: (taskId: string, text: string) => Promise<void>
   onClose: () => void
 }
 
-export const CommentPanel = ({ task, currentUserId: _currentUserId, onAddComment, onClose }: Props) => {
+export const CommentPanel = ({ task, onAddComment, onClose }: Props) => {
   const [text, setText] = useState('')
   const [loading, setLoading] = useState(false)
   const inputRef = useRef<HTMLTextAreaElement>(null)

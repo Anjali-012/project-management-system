@@ -120,7 +120,6 @@ function App() {
         <div className="modal-backdrop" role="presentation" onClick={(e) => { if (e.target === e.currentTarget) workspace.setCommentTask(null) }}>
           <CommentPanel
             task={workspace.commentTask}
-            currentUserId={auth.user.id}
             onAddComment={workspace.addComment}
             onClose={() => workspace.setCommentTask(null)}
           />
