@@ -1368,3 +1368,45 @@ input[type="date"]:focus {
   border-color: var(--indigo-500);
   box-shadow: var(--shadow-ring);
 }
+
+/* ── Notification unread state ───────────────── */
+.badge-unread {
+  background: var(--indigo-600) !important;
+  color: #fff !important;
+  border-color: var(--indigo-600) !important;
+}
+
+.feed-item-unread {
+  background: var(--indigo-50);
+  border-left: 2px solid var(--indigo-400);
+  padding-left: 8px;
+}
+
+.feed-item-unread:hover { background: var(--indigo-100); }
+
+/* ── Inspector panel title right slot ────────── */
+.panel-title-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.mark-read-btn {
+  background: none;
+  border: 1px solid var(--border-default);
+  border-radius: var(--r-xs);
+  font-family: var(--font);
+  font-size: 10.5px;
+  font-weight: 600;
+  color: var(--ink-500);
+  padding: 2px 8px;
+  cursor: pointer;
+  transition: all 0.13s;
+  white-space: nowrap;
+}
+
+.mark-read-btn:hover {
+  border-color: var(--indigo-400);
+  color: var(--indigo-600);
+  background: var(--indigo-50);
+}

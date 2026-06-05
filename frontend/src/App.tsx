@@ -101,6 +101,7 @@ function App() {
           <Inspector
             notifications={workspace.notifications}
             activities={workspace.activities}
+            onMarkNotificationsRead={workspace.markNotificationsRead}
           />
         </section>
       </section>

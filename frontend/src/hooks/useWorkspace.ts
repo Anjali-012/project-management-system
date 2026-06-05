@@ -330,6 +330,15 @@ export const useWorkspace = (
     }
   }
 
+  const markNotificationsRead = useCallback(async () => {
+    try {
+      await request('/api/notifications/read-all', { method: 'PATCH' })
+      setNotifications((current) => current.map((n) => ({ ...n, isRead: true })))
+    } catch {
+      // non-critical, silently ignore
+    }
+  }, [request])
+
   const logout = () => {
     setSelectedProjectId('')
     setProjects([])
@@ -387,6 +396,6 @@ export const useWorkspace = (
     filters, setFilters,
     createProject, createTask, updateTaskStatus, assignTaskMember,
     saveTaskEdit, openTaskEdit, closeTaskEdit, deleteTask,
-    addMember, handleDrop, addComment, logout,
+    addMember, handleDrop, addComment, markNotificationsRead, logout,
   }
 }
