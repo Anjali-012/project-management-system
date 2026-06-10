@@ -29,7 +29,7 @@ export const Sidebar = ({
       <span>PM</span>
       <div>
         <strong>{auth.user.name}</strong>
-        <small>{auth.user.role}</small>
+        <small className={`role-badge role-${auth.user.role}`}>{auth.user.role}</small>
       </div>
     </div>
 

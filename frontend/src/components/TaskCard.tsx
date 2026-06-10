@@ -8,6 +8,8 @@ import { DueDateBadge } from './DueDateBadge'
 type Props = {
   task: Task
   members: Array<Member | string>
+  currentUserId: string
+  isAdmin: boolean
   onDragStart: (id: string) => void
   onAssign: (task: Task, memberId: string) => void
   onStatusChange: (task: Task, status: TaskStatus) => void
@@ -17,50 +19,58 @@ type Props = {
 }
 
 export const TaskCard = memo(({
-  task, members, onDragStart, onAssign, onStatusChange, onEdit, onDelete, onOpenComments,
-}: Props) => (
-  <article className="task-card" draggable onDragStart={() => onDragStart(task._id)}>
-    <div className="task-card-top">
-      <PriorityBadge priority={task.priority ?? 'medium'} />
-      {task.dueDate && <DueDateBadge dueDate={task.dueDate} />}
-    </div>
+  task, members, currentUserId, isAdmin,
+  onDragStart, onAssign, onStatusChange, onEdit, onDelete, onOpenComments,
+}: Props) => {
+  const creatorId = task.createdBy?.id || task.createdBy?._id || ''
+  const canDelete = isAdmin || creatorId === currentUserId
 
-    <div>
-      <h3>{task.title}</h3>
-      {task.description && <p>{task.description}</p>}
-    </div>
+  return (
+    <article className="task-card" draggable onDragStart={() => onDragStart(task._id)}>
+      <div className="task-card-top">
+        <PriorityBadge priority={task.priority ?? 'medium'} />
+        {task.dueDate && <DueDateBadge dueDate={task.dueDate} />}
+      </div>
 
-    <small>{task.assignedTo ? `Assigned to ${task.assignedTo.name}` : 'Unassigned'}</small>
+      <div>
+        <h3>{task.title}</h3>
+        {task.description && <p>{task.description}</p>}
+      </div>
 
-    <label className="inline-field">
-      Task member
-      <select value={getAssignedUserId(task.assignedTo)} onChange={(e) => onAssign(task, e.target.value)}>
-        <option value="">Unassigned</option>
-        {members.map((member) => (
-          <option key={getMemberId(member)} value={getMemberId(member)}>
-            {getMemberName(member)}
-          </option>
-        ))}
-      </select>
-    </label>
+      <small>{task.assignedTo ? `Assigned to ${task.assignedTo.name}` : 'Unassigned'}</small>
 
-    <label className="inline-field">
-      Status
-      <select value={task.status} onChange={(e) => onStatusChange(task, e.target.value as TaskStatus)}>
-        {STATUS_ORDER.map((option) => (
-          <option key={option} value={option}>{STATUS_LABELS[option]}</option>
-        ))}
-      </select>
-    </label>
+      <label className="inline-field">
+        Task member
+        <select value={getAssignedUserId(task.assignedTo)} onChange={(e) => onAssign(task, e.target.value)}>
+          <option value="">Unassigned</option>
+          {members.map((member) => (
+            <option key={getMemberId(member)} value={getMemberId(member)}>
+              {getMemberName(member)}
+            </option>
+          ))}
+        </select>
+      </label>
 
-    <div className="task-actions">
-      <button type="button" onClick={() => onEdit(task)}>Edit</button>
-      <button type="button" className="btn-comments" onClick={() => onOpenComments(task)}>
-        💬 {task.comments?.length ?? 0}
-      </button>
-      <button type="button" onClick={() => onDelete(task)}>Delete</button>
-    </div>
-  </article>
-))
+      <label className="inline-field">
+        Status
+        <select value={task.status} onChange={(e) => onStatusChange(task, e.target.value as TaskStatus)}>
+          {STATUS_ORDER.map((option) => (
+            <option key={option} value={option}>{STATUS_LABELS[option]}</option>
+          ))}
+        </select>
+      </label>
+
+      <div className={`task-actions ${canDelete ? '' : 'task-actions-no-delete'}`}>
+        <button type="button" onClick={() => onEdit(task)}>Edit</button>
+        <button type="button" className="btn-comments" onClick={() => onOpenComments(task)}>
+          💬 {task.comments?.length ?? 0}
+        </button>
+        {canDelete && (
+          <button type="button" onClick={() => onDelete(task)}>Delete</button>
+        )}
+      </div>
+    </article>
+  )
+})
 
 TaskCard.displayName = 'TaskCard'

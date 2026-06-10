@@ -1410,3 +1410,33 @@ input[type="date"]:focus {
   color: var(--indigo-600);
   background: var(--indigo-50);
 }
+
+/* ── Role badge in sidebar ───────────────────── */
+.role-badge {
+  font-family: var(--mono);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  padding: 1px 6px;
+  border-radius: 20px;
+  border: 1px solid;
+  display: inline-block;
+}
+
+.role-admin {
+  background: var(--indigo-50);
+  border-color: var(--indigo-100);
+  color: var(--indigo-600);
+}
+
+.role-member {
+  background: var(--bg-muted);
+  border-color: var(--border-subtle);
+  color: var(--ink-500);
+}
+
+/* task-actions when delete is hidden — just 2 cols */
+.task-actions-no-delete {
+  grid-template-columns: 1fr auto !important;
+}

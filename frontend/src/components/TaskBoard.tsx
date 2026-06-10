@@ -6,6 +6,8 @@ import { TaskCard } from './TaskCard'
 type Props = {
   tasksByStatus: Record<TaskStatus, Task[]>
   members: Array<Member | string>
+  currentUserId: string
+  isAdmin: boolean
   onDragStart: (id: string) => void
   onDrop: (status: TaskStatus) => void
   onAssign: (task: Task, memberId: string) => void
@@ -16,8 +18,8 @@ type Props = {
 }
 
 export const TaskBoard = ({
-  tasksByStatus, members, onDragStart, onDrop,
-  onAssign, onStatusChange, onEdit, onDelete, onOpenComments,
+  tasksByStatus, members, currentUserId, isAdmin,
+  onDragStart, onDrop, onAssign, onStatusChange, onEdit, onDelete, onOpenComments,
 }: Props) => (
   <section className="board">
     {STATUS_ORDER.map((status) => (
@@ -38,6 +40,8 @@ export const TaskBoard = ({
               key={task._id}
               task={task}
               members={members}
+              currentUserId={currentUserId}
+              isAdmin={isAdmin}
               onDragStart={onDragStart}
               onAssign={onAssign}
               onStatusChange={onStatusChange}

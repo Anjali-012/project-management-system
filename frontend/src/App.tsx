@@ -89,6 +89,8 @@ function App() {
           <TaskBoard
             tasksByStatus={workspace.tasksByStatus}
             members={workspace.selectedProjectMembersRaw}
+            currentUserId={auth.user.id}
+            isAdmin={auth.user.role === 'admin'}
             onDragStart={workspace.setDraggedTaskId}
             onDrop={workspace.handleDrop}
             onAssign={workspace.assignTaskMember}
