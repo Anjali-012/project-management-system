@@ -52,6 +52,7 @@ const sendEmail = async ({ type, to, vars, userId, projectId }) => {
       user: userId,
       message: `Email notification failed for task: ${vars.taskTitle}`,
       type: "EMAIL_FAILED",
+      project: projectId,
     });
   }
 };

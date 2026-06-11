@@ -33,6 +33,7 @@ const notifyUser = async ({ type, user, task }) => {
         user: user._id,
         message: messageBuilder(task),
         type,
+        project: task.project,
       });
     }
 
