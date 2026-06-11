@@ -37,6 +37,9 @@ React + Vite (TypeScript)
 | Soft delete for tasks | Preserves the activity log. `isDeleted` filter is applied at query time. |
 | Redis adapter opt-in | Works out of the box locally; flips on automatically in production when `REDIS_URL` is set. |
 | `useWorkspace` hook | Keeps all workspace state and side-effects in one place, leaving `App.tsx` as a pure composition root. |
+| Email via Nodemailer, opt-in | `notifyUser` is the single dispatch point for all user-facing events — it sends an in-app notification and delegates to `emailService`, which is fire-and-forget. Failures are structured-logged (`EMAIL_FAILED`) and never propagate to the API caller. If `SMTP_HOST` is unset, the email layer exits immediately — no code change needed to enable it post-deploy. |
+| Transport layer isolated from email logic | Nodemailer lives only in `utils/email/transport.js`. Swapping to SES or SendGrid means replacing that one file — `emailService`, `templates`, and `notifyUser` are untouched. |
+| Typed email templates, content separate from logic | `utils/email/templates.js` owns subjects, HTML, and plain-text per event type. Adding a new email event is a single key addition there — no changes to send logic. |
 
 ---
 
@@ -49,6 +52,7 @@ React + Vite (TypeScript)
 - Members can create, view, update, and move tasks between **Todo**, **In Progress**, and **Done**.
 - All users viewing the same project receive task events in real time.
 - Activity log records every task change; notifications are created on member addition and task assignment.
+- Assigned user receives an email notification when a task is created or re-assigned to them.
 
 ### Roles & Permissions
 - `member` — access and manage tasks in projects they belong to.
@@ -61,7 +65,8 @@ React + Vite (TypeScript)
 - Redis is optional locally but required for multi-instance production deployments.
 
 ### Out of Scope
-- File attachments, comments, mentions, sprint planning, email delivery, billing.
+- File attachments, mentions, sprint planning, billing.
+- Email delivery for events other than task assignment (member-added emails, status-change emails, etc.).
 - Full drag-and-drop (status changes use controlled selects; column drag-to-drop is supported).
 
 ---
@@ -125,7 +130,8 @@ backend/src/
 ├── sockets/         # Socket.IO init + room/event logic
 ├── middlewares/     # auth, error, project-member, task-member, validation
 ├── validations/     # express-validator rule sets
-├── utils/           # ApiError, asyncHandler, logActivity, createNotification
+├── utils/           # ApiError, asyncHandler, logActivity, createNotification, notifyUser
+│   └── email/       # transport, templates, emailService
 ├── app.js           # Express app setup
 └── server.js        # HTTP server + DB + socket init
 ```
@@ -151,6 +157,12 @@ MONGO_URI=mongodb://127.0.0.1:27017/internal-pms
 JWT_SECRET=replace-me
 CLIENT_URL=http://localhost:5173
 REDIS_URL=                         # leave blank to skip Redis locally
+
+# Email — leave blank to disable task-assignment emails
+SMTP_HOST=
+SMTP_PORT=587
+SMTP_USER=
+SMTP_PASS=
 ```
 
 **Frontend**
@@ -185,6 +197,10 @@ MONGO_URI=<your Atlas URI>
 JWT_SECRET=<secret>
 CLIENT_URL=https://<your-vercel-app>.vercel.app
 REDIS_URL=<your Redis Cloud URL>
+SMTP_HOST=smtp.gmail.com          # or any SMTP provider
+SMTP_PORT=587
+SMTP_USER=<your email address>
+SMTP_PASS=<app password / SMTP credential>
 ```
 
 5. Copy the **Deploy Hook URL** from Render → Settings → Deploy Hook. Add it as `RENDER_DEPLOY_HOOK_URL` in GitHub repository secrets.

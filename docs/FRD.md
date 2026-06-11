@@ -34,6 +34,7 @@
 | F-5 | **Real-Time Task Updates** | All users currently viewing the same project see task create, update, and delete events pushed instantly via Socket.IO — no manual refresh is needed. |
 | F-6 | **Activity Log** | Every task action (created, updated, status changed, deleted) and every member addition is automatically logged per project. All project members can view the activity timeline. |
 | F-7 | **In-App Notifications** | A notification is created for a user when they are added to a project, or when a task is assigned to them. Notifications are fetched from the server and displayed in the UI. |
+| F-8 | **Task Assignment Email** | When a task is created with an assignee, or an existing task's assignee changes, the backend sends a transactional email to the assigned user with the task title, priority, and due date. Email is delivered via SMTP (Nodemailer). The call is fire-and-forget — an SMTP failure is logged but never interrupts the API response. If `SMTP_HOST` is not set, email is silently skipped. |
 
 ---
 
@@ -101,7 +102,8 @@ The following features were explicitly excluded from this version:
 - File or image attachments on tasks or projects.
 - Inline comments or @-mention threads on tasks.
 - Sprint planning, milestones, story points, or time tracking.
-- Email delivery for notifications — notifications are in-app only.
+- Email delivery for notifications — in-app only for all events except task assignment (F-8).
+- Member-added emails, status-change emails, password reset emails.
 - Admin UI for user management (role promotion, account deactivation).
 - Full drag-and-drop column reordering (column order is fixed: Todo → In Progress → Done).
 - Billing, usage quotas, or multi-tenancy.
@@ -315,10 +317,53 @@ The JWT is passed in `socket.handshake.auth.token` at connection time. A Socket.
 
 ---
 
+#### Email Notification Layer (`utils/email/` + `utils/notifyUser.js`)
+
+The notification system is structured in three layers:
+
+```
+task.service.js
+    │
+    └─ notifyUser({ type, user, task })
+            │
+            ├─ createNotification()       — in-app notification (MongoDB)
+            └─ emailService.sendEmail()   — typed email, fire-and-forget
+                    │
+                    ├─ templates.js       — subject + HTML + plain-text per type
+                    └─ transport.js       — Nodemailer (swappable)
+```
+
+**`notifyUser.js`** is the single call site in `task.service.js`. It dispatches to both the in-app notification and the email channel. Adding a new channel (Slack, push) means editing only this file.
+
+**`email/templates.js`** owns all email content. Each event type (`TASK_ASSIGNED`, `TASK_UPDATED`, `TASK_COMPLETED`) maps to a builder function returning `{ subject, html, text }`. Adding a new email event is a single key addition here — no changes to send logic.
+
+**`email/emailService.js`** calls the transport and emits structured logs:
+- `[email] EMAIL_SENT_SUCCESS { type, to, taskTitle }` on success
+- `[email] EMAIL_FAILED { type, to, taskTitle, error }` on failure
+
+Failures are caught internally and never propagate to the API response.
+
+**`email/transport.js`** is the only file that references Nodemailer. Swapping to AWS SES or SendGrid means replacing this file alone.
+
+**Required environment variables:**
+
+| Variable | Description |
+|---|---|
+| `SMTP_HOST` | SMTP server hostname (e.g. `smtp.gmail.com`). Omit to disable email entirely. |
+| `SMTP_PORT` | Port — default `587` (STARTTLS). |
+| `SMTP_USER` | SMTP login / sender address. |
+| `SMTP_PASS` | SMTP password or app-specific password. |
+
+---
+
 ### 6.5 Design Decisions & Why
 
 | Decision | Rationale |
 |---|---|
+| **`notifyUser` as single dispatch point** | `task.service.js` calls one function per assignment event. Channel decisions (email, in-app, future Slack) live only in `notifyUser.js` — the service is decoupled from delivery mechanics. |
+| **Transport layer isolated from email logic** | Nodemailer is referenced only in `utils/email/transport.js`. Switching to SES or SendGrid means replacing that one file; `emailService`, `templates`, and `notifyUser` are untouched. |
+| **Typed templates, content separate from send logic** | `utils/email/templates.js` owns subjects, HTML, and plain-text per event type. A new email event is a single new key in that file — no changes to the send path. |
+| **Email is fire-and-forget, SMTP opt-in** | If `SMTP_HOST` is unset, `emailService` exits immediately — no error, no side-effect. SMTP failures are structured-logged (`EMAIL_FAILED`) but never surface to the API caller. This means the feature is safe to deploy before credentials are available. |
 | **REST as the source of truth for writes; sockets for broadcast only** | Validation, authorization, and persistence all happen in one place. Sockets carry the already-persisted result — if the socket broadcast fails, no data is lost because the HTTP response already confirmed the write. |
 | **React Context + custom hooks instead of Redux or Zustand** | The shared state surface is small: auth, selected project, task list, socket reference. Introducing a dedicated library at this scale adds boilerplate and indirection with no benefit. `useWorkspace` centralises all workspace state and side-effects; `App.tsx` is a pure composition root. |
 | **Single JWT for REST and WebSocket** | One secret, one payload shape, one verification path. No second token type or dedicated socket handshake token is needed. Project membership checks for HTTP and socket handlers use identical logic. |

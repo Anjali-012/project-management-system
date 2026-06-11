@@ -1,8 +1,9 @@
 const Task = require("../models/task.model");
 const Project = require("../models/project.model");
+const User = require("../models/user.model");
 const ApiError = require("../utils/ApiError");
-const createNotification = require("../utils/createNotification");
 const logActivity = require("../utils/logActivity");
+const notifyUser = require("../utils/notifyUser");
 
 const populateTask = (query) =>
   query
@@ -49,11 +50,10 @@ const createTask = async ({ payload, userId, project }) => {
   });
 
   if (assignedTo) {
-    await createNotification({
-      user: assignedTo,
-      message: `You were assigned a new task: ${task.title}`,
-      type: "TASK_ASSIGNED",
-    });
+    const assignee = await User.findById(assignedTo).select("name email");
+    if (assignee) {
+      notifyUser({ type: "TASK_ASSIGNED", user: assignee, task });
+    }
   }
 
   return populateTask(Task.findById(task._id));
@@ -99,7 +99,7 @@ const updateTask = async ({ task, payload, userId, project }) => {
   const previousStatus = task.status;
   const updatedTask = await populateTask(
     Task.findByIdAndUpdate(task._id, payload, {
-      new: true,
+      returnDocument: "after",
       runValidators: true,
     }),
   );
@@ -119,11 +119,8 @@ const updateTask = async ({ task, payload, userId, project }) => {
     payload.assignedTo &&
     (!task.assignedTo || task.assignedTo.toString() !== payload.assignedTo)
   ) {
-    await createNotification({
-      user: payload.assignedTo,
-      message: `You were assigned a task: ${updatedTask.title}`,
-      type: "TASK_ASSIGNED",
-    });
+    // updatedTask.assignedTo is already populated — no extra DB call needed
+    notifyUser({ type: "TASK_ASSIGNED", user: updatedTask.assignedTo, task: updatedTask });
   }
 
   return updatedTask;
