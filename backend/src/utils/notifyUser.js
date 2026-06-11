@@ -23,7 +23,7 @@ const IN_APP_MESSAGES = {
  * @param {object} opts
  * @param {"TASK_ASSIGNED"|"TASK_UPDATED"|"TASK_COMPLETED"} opts.type
  * @param {{ _id: string, name: string, email: string }} opts.user   recipient
- * @param {{ title: string, priority?: string, dueDate?: Date }} opts.task
+ * @param {{ title: string, priority?: string, dueDate?: Date, project?: string }} opts.task
  */
 const notifyUser = async ({ type, user, task }) => {
   try {
@@ -37,10 +37,11 @@ const notifyUser = async ({ type, user, task }) => {
     }
 
     if (EMAIL_EVENTS[type]) {
-      console.info(`[task] email triggered → task: "${task.title}" | to: ${user.email} | type: ${type}`);
       sendEmail({
         type: EMAIL_EVENTS[type],
         to: user.email,
+        userId: user._id,
+        projectId: task.project,
         vars: {
           name: user.name,
           taskTitle: task.title,

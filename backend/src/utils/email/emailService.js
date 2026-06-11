@@ -1,17 +1,22 @@
 const transport = require("./transport");
 const { buildTemplate } = require("./templates");
+const logActivity = require("../logActivity");
+const createNotification = require("../createNotification");
 
 const ENABLED = () => !!(process.env.SMTP_HOST && process.env.SMTP_USER);
 
 /**
  * Sends a typed email. Fire-and-forget — never throws.
+ * Logs outcome to activity log and notifies the recipient on failure.
  *
  * @param {object} opts
  * @param {"TASK_ASSIGNED"|"TASK_UPDATED"|"TASK_COMPLETED"} opts.type
- * @param {string} opts.to        recipient email
- * @param {object} opts.vars      template variables ({ name, taskTitle, priority, dueDate })
+ * @param {string} opts.to           recipient email
+ * @param {object} opts.vars         template variables ({ name, taskTitle, priority, dueDate })
+ * @param {string} opts.userId       recipient user _id (for notification + activity)
+ * @param {string} opts.projectId    project _id (for activity log)
  */
-const sendEmail = async ({ type, to, vars }) => {
+const sendEmail = async ({ type, to, vars, userId, projectId }) => {
   if (!ENABLED()) return;
 
   const template = buildTemplate(type, vars);
@@ -19,10 +24,6 @@ const sendEmail = async ({ type, to, vars }) => {
     console.warn(`[email] No template registered for type: ${type}`);
     return;
   }
-
-  const meta = { type, to, taskTitle: vars.taskTitle };
-
-  console.info(`[email] sending → type: ${type} | to: ${to} | task: "${vars.taskTitle}"`);
 
   try {
     await transport.sendMail({
@@ -32,9 +33,26 @@ const sendEmail = async ({ type, to, vars }) => {
       text: template.text,
       html: template.html,
     });
-    console.info(`[email] EMAIL_SENT_SUCCESS → type: ${meta.type} | to: ${meta.to} | task: "${meta.taskTitle}"`);
+
+    await logActivity({
+      project: projectId,
+      user: userId,
+      action: "EMAIL_SENT",
+      metadata: { type, to, taskTitle: vars.taskTitle },
+    });
   } catch (err) {
-    console.error(`[email] EMAIL_FAILED → type: ${meta.type} | to: ${meta.to} | task: "${meta.taskTitle}" | error: ${err.message}`);
+    await logActivity({
+      project: projectId,
+      user: userId,
+      action: "EMAIL_FAILED",
+      metadata: { type, to, taskTitle: vars.taskTitle, error: err.message },
+    });
+
+    await createNotification({
+      user: userId,
+      message: `Email notification failed for task: ${vars.taskTitle}`,
+      type: "EMAIL_FAILED",
+    });
   }
 };
 

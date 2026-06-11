@@ -25,6 +25,8 @@ const activitySchema = new mongoose.Schema(
         "COMMENT_ADDED",
         "MEMBER_ADDED",
         "PROJECT_CREATED",
+        "EMAIL_SENT",
+        "EMAIL_FAILED",
       ],
     },
 
