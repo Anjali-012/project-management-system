@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { FormEvent } from 'react'
 import { io, Socket } from 'socket.io-client'
 import { createApiClient } from '../api/client'
+
 import {
   ALPHA_NUMERIC_TEXT_PATTERN,
   EMAIL_PATTERN,
