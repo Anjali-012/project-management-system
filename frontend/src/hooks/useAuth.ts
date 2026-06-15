@@ -1,4 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
+
+import { useDispatch, useSelector } from 'react-redux'
+
 import type { FormEvent } from 'react'
 import { createApiClient } from '../api/client'
 import {
@@ -7,6 +10,9 @@ import {
   PASSWORD_PATTERN,
 } from '../constants'
 import type { AuthState, User } from '../types'
+import { logout as logoutAction, setAuth, setLoading } from '../store/auth/authSlice'
+
+
 import { validateField } from '../utils/validation'
 
 const STORAGE_KEY = 'pm_auth'
@@ -17,11 +23,22 @@ const readAuth = (): AuthState | null => {
 }
 
 export const useAuth = (showToast: (msg: string, type?: 'error' | 'success' | 'info') => void) => {
-  const [auth, setAuthState] = useState<AuthState | null>(() => readAuth())
+  const dispatch = useDispatch()
+  const auth = useSelector((s: { auth: { auth: AuthState | null; loading: boolean } }) => s.auth.auth)
+  const loadingFromStore = useSelector((s: { auth: { auth: AuthState | null; loading: boolean } }) => s.auth.loading)
+
+  // localStorage bootstrapping -> dispatch into redux once
+  useEffect(() => {
+    const boot = readAuth()
+    if (boot && !auth) dispatch(setAuth(boot))
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
   const [authMode, setAuthMode] = useState<'login' | 'register'>('login')
   const [showPassword, setShowPassword] = useState(false)
   const [authForm, setAuthForm] = useState({ name: '', email: '', password: '' })
-  const [loading, setLoading] = useState(false)
+  const loading = loadingFromStore
+
 
   // Sync auth to localStorage
   useEffect(() => {
@@ -31,6 +48,7 @@ export const useAuth = (showToast: (msg: string, type?: 'error' | 'success' | 'i
     }
     localStorage.setItem(STORAGE_KEY, JSON.stringify(auth))
   }, [auth])
+
 
   const validateAuthForm = useCallback(() => {
     if (authMode === 'register') {
@@ -70,7 +88,8 @@ export const useAuth = (showToast: (msg: string, type?: 'error' | 'success' | 'i
         return
       }
 
-      setLoading(true)
+      dispatch(setLoading(true))
+
       try {
         // No token yet — use a bare client
         const { request } = createApiClient()
@@ -100,18 +119,23 @@ export const useAuth = (showToast: (msg: string, type?: 'error' | 'success' | 'i
   return
 }
 
-        setAuthState({ token: body.token!, user: body.user! })
+        dispatch(setAuth({ token: body.token!, user: body.user! }))
+
       } catch (err) {
         showToast(err instanceof Error ? err.message : 'Authentication failed')
       } finally {
-        setLoading(false)
+        dispatch(setLoading(false))
       }
+
     },
     [authMode, authForm, validateAuthForm, showToast],
   )
 
  const logout = useCallback(() => {
-  setAuthState(null)
+  dispatch(logoutAction())
+
+
+
 
   setAuthForm({
     name: '',
