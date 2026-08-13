@@ -43,12 +43,7 @@ function App() {
   }
 
   const handleLogout = () => { workspace.logout(); logoutAuth() }
-  const focusTaskComposer = () => {
-    setActiveSection('tasks')
-    window.setTimeout(() => {
-      document.querySelector<HTMLInputElement>('.task-composer input[name="task-title"]')?.focus()
-    }, 0)
-  }
+  const openTasks = () => setActiveSection('tasks')
   const openMembers = () => setActiveSection('members')
 
   return (
@@ -76,7 +71,7 @@ function App() {
               auth={auth}
               projects={workspace.projects}
               notifications={workspace.notifications}
-              onOpenTasks={focusTaskComposer}
+              onOpenTasks={openTasks}
               onOpenMembers={openMembers}
             />
           )}

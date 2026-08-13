@@ -1,16 +1,16 @@
 import { useEffect, useMemo, useState } from 'react'
 import type { FormEvent } from 'react'
 import { createApiClient } from '../api/client'
-import type { Activity, AuthState, Member, Project, TaskFilters, TaskStatus } from '../types'
+import type { Activity, AuthState, Member, Project, TaskFilters, TaskPriority, TaskStatus } from '../types'
 import { formatDate } from '../utils/date'
 import { getMemberId, getMemberName } from '../utils/member'
+import { STATUS_LABELS, STATUS_ORDER, PRIORITY_LABELS, PRIORITY_ORDER } from '../constants'
 import { TaskBoard } from './TaskBoard'
-import { TaskComposer, type TaskForm } from './TaskComposer'
-import { TaskFiltersBar } from './TaskFiltersBar'
+import { CreateTaskModal } from './CreateTaskModal'
+import type { TaskForm } from './TaskComposer'
+import taskStyles from './Tasks/Tasks.module.css'
 
 type ProjectForm = { title: string; description: string }
-
-const EMPTY_FILTERS: TaskFilters = { search: '', status: '', priority: '', assignedTo: '' }
 
 type ProjectsPageProps = {
   projects: Project[]
@@ -110,6 +110,8 @@ type TasksPagePropsAssign = (task: Task, memberId: string) => void
 type TasksPagePropsStatus = (task: Task, status: TaskStatus) => void
 type TasksPagePropsTask = (task: Task) => void
 
+const EMPTY_FILTERS: TaskFilters = { search: '', status: '', priority: '', assignedTo: '' }
+
 export const TasksPage = ({
   projects,
   selectedProjectId,
@@ -131,47 +133,106 @@ export const TasksPage = ({
   onEdit,
   onDelete,
   onOpenComments,
-}: TasksPageProps) => (
-  <section className="section-page tasks-page">
-    <div className="page-header page-header-inline tasks-page-header">
-      <div>
-        <p className="section-kicker">Tasks</p>
-        <h1>Manage tasks</h1>
-        <p>Manage tasks for the selected project.</p>
-      </div>
-      <label className="project-selector">
-        <span>Project</span>
-        <div className="project-selector-control">
-          <i className="project-selector-dot" />
-          <select
-            value={selectedProjectId}
-            onChange={(event) => onSelectProject(event.target.value)}
-            disabled={projects.length === 0}
-          >
-            {projects.map((project) => (
-              <option key={project._id} value={project._id}>
-                {project.title}
-              </option>
-            ))}
-          </select>
-        </div>
-      </label>
-    </div>
+}: TasksPageProps) => {
+  const [createOpen, setCreateOpen] = useState(false)
+  const hasActiveFilters = filters.search || filters.status || filters.priority || filters.assignedTo
 
-    {selectedProject ? (
-      <>
-        <TaskComposer
-          taskForm={taskForm}
-          setTaskForm={setTaskForm}
-          members={members}
-          onCreateTask={onCreateTask}
-        />
-        <TaskFiltersBar
-          filters={filters}
-          members={members}
-          onChange={onFiltersChange}
-          onClear={() => onFiltersChange(EMPTY_FILTERS)}
-        />
+  const handleCreate = (e: FormEvent) => {
+    onCreateTask(e)
+    setCreateOpen(false)
+  }
+
+  return (
+    <section className="section-page tasks-page">
+      {/* ── Toolbar ── */}
+      <div className={taskStyles.toolbar}>
+        <select
+          className={taskStyles.projectSelect}
+          value={selectedProjectId}
+          onChange={(e) => onSelectProject(e.target.value)}
+          disabled={projects.length === 0}
+          aria-label="Select project"
+        >
+          {projects.length === 0 && <option value="">No projects</option>}
+          {projects.map((p) => (
+            <option key={p._id} value={p._id}>{p.title}</option>
+          ))}
+        </select>
+
+        {selectedProject && (
+          <>
+            <div className={taskStyles.divider} aria-hidden="true" />
+
+            <input
+              className={taskStyles.search}
+              placeholder="Search tasks…"
+              value={filters.search}
+              onChange={(e) => onFiltersChange({ ...filters, search: e.target.value })}
+            />
+
+            <select
+              className={taskStyles.filterSelect}
+              value={filters.status}
+              onChange={(e) => onFiltersChange({ ...filters, status: e.target.value as TaskStatus | '' })}
+              aria-label="Filter by status"
+            >
+              <option value="">All statuses</option>
+              {STATUS_ORDER.map((s) => (
+                <option key={s} value={s}>{STATUS_LABELS[s]}</option>
+              ))}
+            </select>
+
+            <select
+              className={taskStyles.filterSelect}
+              value={filters.priority}
+              onChange={(e) => onFiltersChange({ ...filters, priority: e.target.value as TaskPriority | '' })}
+              aria-label="Filter by priority"
+            >
+              <option value="">All priorities</option>
+              {PRIORITY_ORDER.map((p) => (
+                <option key={p} value={p}>{PRIORITY_LABELS[p]}</option>
+              ))}
+            </select>
+
+            <select
+              className={taskStyles.filterSelect}
+              value={filters.assignedTo}
+              onChange={(e) => onFiltersChange({ ...filters, assignedTo: e.target.value })}
+              aria-label="Filter by assignee"
+            >
+              <option value="">All members</option>
+              {members.map((m) => (
+                <option key={getMemberId(m)} value={getMemberId(m)}>{getMemberName(m)}</option>
+              ))}
+            </select>
+
+            {hasActiveFilters && (
+              <button
+                type="button"
+                className={taskStyles.clearBtn}
+                onClick={() => onFiltersChange(EMPTY_FILTERS)}
+              >
+                Clear
+              </button>
+            )}
+          </>
+        )}
+
+        <div className={taskStyles.spacer} />
+
+        {selectedProject && (
+          <button
+            type="button"
+            className={taskStyles.createBtn}
+            onClick={() => setCreateOpen(true)}
+          >
+            + Create New Task
+          </button>
+        )}
+      </div>
+
+      {/* ── Board or empty state ── */}
+      {selectedProject ? (
         <TaskBoard
           tasksByStatus={tasksByStatus}
           members={members}
@@ -185,15 +246,26 @@ export const TasksPage = ({
           onDelete={onDelete}
           onOpenComments={onOpenComments}
         />
-      </>
-    ) : (
-      <div className="empty-state-card">
-        <strong>No projects yet</strong>
-        <p>Create a project to start managing tasks.</p>
-      </div>
-    )}
-  </section>
-)
+      ) : (
+        <div className={taskStyles.emptyState}>
+          <strong>No projects yet</strong>
+          <p>Create a project to start managing tasks.</p>
+        </div>
+      )}
+
+      {/* ── Create task modal ── */}
+      {createOpen && (
+        <CreateTaskModal
+          taskForm={taskForm}
+          setTaskForm={setTaskForm}
+          members={members}
+          onCreateTask={handleCreate}
+          onClose={() => setCreateOpen(false)}
+        />
+      )}
+    </section>
+  )
+}
 
 type MembersPageProps = {
   selectedProject?: Project

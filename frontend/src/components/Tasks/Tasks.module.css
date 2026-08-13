@@ -1,0 +1,158 @@
+.toolbar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+/* Project selector — compact, no label */
+.projectSelect {
+  height: 44px;
+  min-width: 180px;
+  max-width: 260px;
+  border-color: #dfe5f0;
+  border-radius: 10px;
+  background-color: #fff;
+  color: #101936;
+  font-size: 13px;
+  font-weight: 700;
+  padding: 0 32px 0 14px;
+  box-shadow: 0 2px 8px rgba(15, 22, 35, 0.04);
+  flex-shrink: 0;
+}
+
+.projectSelect:disabled {
+  color: var(--ink-400);
+  cursor: not-allowed;
+}
+
+/* Search input */
+.search {
+  height: 44px;
+  min-width: 160px;
+  flex: 1;
+  max-width: 260px;
+  border-color: #dfe5f0;
+  border-radius: 10px;
+  background-color: #fff;
+  font-size: 13px;
+  padding: 0 14px;
+  box-shadow: 0 2px 8px rgba(15, 22, 35, 0.04);
+}
+
+/* Filter selects */
+.filterSelect {
+  height: 44px;
+  min-width: 130px;
+  border-color: #dfe5f0;
+  border-radius: 10px;
+  background-color: #fff;
+  font-size: 13px;
+  padding: 0 32px 0 12px;
+  box-shadow: 0 2px 8px rgba(15, 22, 35, 0.04);
+}
+
+/* Divider between project selector and filters */
+.divider {
+  width: 1px;
+  height: 28px;
+  background: #dfe5f0;
+  flex-shrink: 0;
+}
+
+/* Clear filters button */
+.clearBtn {
+  height: 44px;
+  border: 1px solid var(--border-default);
+  border-radius: 10px;
+  background: #fff;
+  color: var(--ink-500);
+  font-family: var(--font);
+  font-size: 12px;
+  font-weight: 600;
+  padding: 0 14px;
+  cursor: pointer;
+  transition: all 0.13s;
+  white-space: nowrap;
+}
+
+.clearBtn:hover {
+  border-color: var(--rose-500);
+  color: var(--rose-600);
+  background: var(--rose-50);
+}
+
+/* Spacer pushes create button to the right */
+.spacer {
+  flex: 1;
+  min-width: 8px;
+}
+
+/* Create task button */
+.createBtn {
+  height: 44px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 18px;
+  border: none;
+  border-radius: 10px;
+  background: linear-gradient(135deg, #5c4df4, #4f46e5);
+  color: #fff;
+  font-family: var(--font);
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+  box-shadow: 0 4px 12px rgba(79, 70, 229, 0.25);
+  transition: all 0.15s var(--ease);
+  flex-shrink: 0;
+}
+
+.createBtn:hover {
+  box-shadow: 0 6px 16px rgba(79, 70, 229, 0.35);
+  transform: translateY(-1px);
+}
+
+.createBtn:active {
+  transform: translateY(0);
+}
+
+/* Empty state */
+.emptyState {
+  min-height: 320px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  border: 1px solid #dfe5f0;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.94);
+  box-shadow: 0 12px 32px rgba(15, 22, 35, 0.045);
+  text-align: center;
+}
+
+.emptyState strong {
+  color: #101936;
+  font-size: 18px;
+}
+
+.emptyState p {
+  color: #64748b;
+  font-size: 14px;
+}
+
+@media (max-width: 900px) {
+  .spacer { display: none; }
+  .createBtn { margin-left: auto; }
+}
+
+@media (max-width: 640px) {
+  .toolbar { gap: 8px; }
+  .projectSelect,
+  .search,
+  .filterSelect { min-width: 0; flex: 1 1 140px; }
+  .createBtn { width: 100%; justify-content: center; }
+  .divider { display: none; }
+}
