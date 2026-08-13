@@ -1,5 +1,7 @@
+import { useEffect, useMemo, useState } from 'react'
 import type { FormEvent } from 'react'
-import type { Activity, Member, Project, TaskFilters, TaskStatus } from '../types'
+import { createApiClient } from '../api/client'
+import type { Activity, AuthState, Member, Project, TaskFilters, TaskStatus } from '../types'
 import { formatDate } from '../utils/date'
 import { getMemberId, getMemberName } from '../utils/member'
 import { TaskBoard } from './TaskBoard'
@@ -250,32 +252,76 @@ export const MembersPage = ({
   </section>
 )
 
-export const ActivityPage = ({ activities }: { activities: Activity[] }) => (
-  <section className="section-page activity-page">
-    <div className="page-header">
-      <div>
-        <p className="section-kicker">Activity</p>
-        <h1>Track recent changes across your workspace.</h1>
-      </div>
-    </div>
+type ActivityPageProps = {
+  auth: AuthState
+  projects: Project[]
+}
 
-    <div className="activity-page-list">
-      {activities.length === 0 ? (
-        <p className="empty">No activity yet.</p>
-      ) : (
-        activities.map((activity) => (
-          <article className="activity-row" key={activity._id}>
-            <span className="activity-icon">{activity.action[0]?.toUpperCase() || 'A'}</span>
-            <div>
-              <strong>{activity.action.replaceAll('_', ' ')}</strong>
-              <small>{activity.user?.name || 'System'} - {formatDate(activity.createdAt)}</small>
-            </div>
-          </article>
-        ))
-      )}
-    </div>
-  </section>
-)
+export const ActivityPage = ({ auth, projects }: ActivityPageProps) => {
+  const [projectFilter, setProjectFilter] = useState<string>('all')
+  const [activities, setActivities] = useState<Activity[]>([])
+  const [loading, setLoading] = useState(false)
+
+  const { request } = useMemo(() => createApiClient(auth.token), [auth.token])
+
+  useEffect(() => {
+    const url = projectFilter === 'all'
+      ? '/api/activity'
+      : `/api/activity/${projectFilter}`
+    let cancelled = false
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setLoading(true)
+    request<{ data: Activity[] }>(url)
+      .then((body) => { if (!cancelled) setActivities(body.data) })
+      .catch(() => undefined)
+      .finally(() => { if (!cancelled) setLoading(false) })
+    return () => { cancelled = true }
+  }, [projectFilter, request])
+
+  return (
+    <section className="section-page activity-page">
+      <div className="page-header page-header-inline">
+        <div>
+          <p className="section-kicker">Activity</p>
+          <h1>Track recent changes across your workspace.</h1>
+        </div>
+        <label className="project-selector">
+          <span>Project</span>
+          <div className="project-selector-control">
+            <i className="project-selector-dot" />
+            <select
+              value={projectFilter}
+              onChange={(e) => setProjectFilter(e.target.value)}
+            >
+              <option value="all">All Projects</option>
+              {projects.map((p) => (
+                <option key={p._id} value={p._id}>{p.title}</option>
+              ))}
+            </select>
+          </div>
+        </label>
+      </div>
+
+      <div className="activity-page-list">
+        {loading ? (
+          <p className="empty">Loading...</p>
+        ) : activities.length === 0 ? (
+          <p className="empty">No activity yet.</p>
+        ) : (
+          activities.map((activity) => (
+            <article className="activity-row" key={activity._id}>
+              <span className="activity-icon">{activity.action[0]?.toUpperCase() || 'A'}</span>
+              <div>
+                <strong>{activity.action.replaceAll('_', ' ')}</strong>
+                <small>{activity.user?.name || 'System'} - {formatDate(activity.createdAt)}</small>
+              </div>
+            </article>
+          ))
+        )}
+      </div>
+    </section>
+  )
+}
 
 export const PlaceholderPage = ({ title }: { title: string }) => (
   <section className="section-page">

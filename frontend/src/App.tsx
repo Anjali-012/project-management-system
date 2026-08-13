@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useAuth } from './hooks/useAuth'
 import { useToast } from './hooks/useToast'
 import { useWorkspace } from './hooks/useWorkspace'
+import { useTasksPage } from './hooks/useTasksPage'
 
 import { AuthScreen } from './components/AuthScreen'
 import { CommentPanel } from './components/CommentPanel'
@@ -24,6 +25,8 @@ function App() {
   } = useAuth(showToast)
 
   const workspace = useWorkspace(auth, showToast)
+
+  const tasks = useTasksPage(auth, workspace.projects, workspace.socketRef, showToast)
 
   if (!auth) {
     return (
@@ -60,8 +63,8 @@ function App() {
           auth={auth}
           realtimeStatus={workspace.realtimeStatus}
           notifications={workspace.notifications}
-          filters={workspace.filters}
-          onFiltersChange={workspace.setFilters}
+          filters={tasks.filters}
+          onFiltersChange={tasks.setFilters}
           onLogout={handleLogout}
         />
 
@@ -70,11 +73,8 @@ function App() {
 
           {activeSection === 'dashboard' && (
             <DashboardOverview
-              userName={auth.user.name}
-              selectedProject={workspace.selectedProject}
-              tasks={workspace.tasks}
-              members={workspace.selectedProjectMembersRaw}
-              activities={workspace.activities}
+              auth={auth}
+              projects={workspace.projects}
               notifications={workspace.notifications}
               onOpenTasks={focusTaskComposer}
               onOpenMembers={openMembers}
@@ -95,25 +95,25 @@ function App() {
           {activeSection === 'tasks' && (
             <TasksPage
               projects={workspace.projects}
-              selectedProjectId={workspace.selectedProjectId}
-              selectedProject={workspace.selectedProject}
-              onSelectProject={workspace.setSelectedProjectId}
-              taskForm={workspace.taskForm}
-              setTaskForm={workspace.setTaskForm}
-              members={workspace.selectedProjectMembersRaw}
-              onCreateTask={workspace.createTask}
-              filters={workspace.filters}
-              onFiltersChange={workspace.setFilters}
-              tasksByStatus={workspace.tasksByStatus}
+              selectedProjectId={tasks.taskProjectId}
+              selectedProject={tasks.taskProject}
+              onSelectProject={tasks.setTaskProjectId}
+              taskForm={tasks.taskForm}
+              setTaskForm={tasks.setTaskForm}
+              members={tasks.taskProjectMembers}
+              onCreateTask={tasks.createTask}
+              filters={tasks.filters}
+              onFiltersChange={tasks.setFilters}
+              tasksByStatus={tasks.tasksByStatus}
               currentUserId={auth.user.id}
               isAdmin={auth.user.role === 'admin'}
-              onDragStart={workspace.setDraggedTaskId}
-              onDrop={workspace.handleDrop}
-              onAssign={workspace.assignTaskMember}
-              onStatusChange={workspace.updateTaskStatus}
-              onEdit={workspace.openTaskEdit}
-              onDelete={workspace.deleteTask}
-              onOpenComments={workspace.setCommentTask}
+              onDragStart={tasks.setDraggedTaskId}
+              onDrop={tasks.handleDrop}
+              onAssign={tasks.assignTaskMember}
+              onStatusChange={tasks.updateTaskStatus}
+              onEdit={tasks.openTaskEdit}
+              onDelete={tasks.deleteTask}
+              onOpenComments={tasks.setCommentTask}
             />
           )}
 
@@ -127,30 +127,31 @@ function App() {
             />
           )}
 
-          {activeSection === 'activity' && <ActivityPage activities={workspace.activities} />}
+          {activeSection === 'activity' && (
+            <ActivityPage auth={auth} projects={workspace.projects} />
+          )}
           {activeSection === 'calendar' && <PlaceholderPage title="Calendar" />}
           {activeSection === 'reports' && <PlaceholderPage title="Reports" />}
           {activeSection === 'settings' && <PlaceholderPage title="Settings" />}
         </div>
       </section>
 
-      {workspace.editTask && workspace.selectedProject && (
+      {tasks.editTask && tasks.taskProject && (
         <EditTaskModal
-    
-          editForm={workspace.editForm}
-          setEditForm={workspace.setEditForm}
-          members={workspace.selectedProjectMembersRaw}
-          onSave={workspace.saveTaskEdit}
-          onClose={workspace.closeTaskEdit}
+          editForm={tasks.editForm}
+          setEditForm={tasks.setEditForm}
+          members={tasks.taskProjectMembers}
+          onSave={tasks.saveTaskEdit}
+          onClose={tasks.closeTaskEdit}
         />
       )}
 
-      {workspace.commentTask && (
-        <div className="modal-backdrop" role="presentation" onClick={(e) => { if (e.target === e.currentTarget) workspace.setCommentTask(null) }}>
+      {tasks.commentTask && (
+        <div className="modal-backdrop" role="presentation" onClick={(e) => { if (e.target === e.currentTarget) tasks.setCommentTask(null) }}>
           <CommentPanel
-            task={workspace.commentTask}
-            onAddComment={workspace.addComment}
-            onClose={() => workspace.setCommentTask(null)}
+            task={tasks.commentTask}
+            onAddComment={tasks.addComment}
+            onClose={() => tasks.setCommentTask(null)}
           />
         </div>
       )}

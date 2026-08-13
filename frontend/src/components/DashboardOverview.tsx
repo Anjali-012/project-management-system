@@ -1,30 +1,50 @@
-import { useState } from 'react'
-import type { Activity, Member, Notification, Project, Task } from '../types'
+import { useEffect, useMemo, useState } from 'react'
+import { createApiClient } from '../api/client'
+import type { Activity, AuthState, Notification, Project, Task } from '../types'
 import { formatDate } from '../utils/date'
 import { getMemberName } from '../utils/member'
 import { PresencePill } from './PresencePill'
 
 type Props = {
-  userName: string
-  selectedProject?: Project
-  tasks: Task[]
-  members: Array<Member | string>
-  activities: Activity[]
+  auth: AuthState
+  projects: Project[]
   notifications: Notification[]
   onOpenTasks: () => void
   onOpenMembers: () => void
 }
 
 export const DashboardOverview = ({
-  userName,
-  selectedProject,
-  tasks,
-  members,
-  activities,
+  auth,
+  projects,
   notifications,
   onOpenTasks,
   onOpenMembers,
 }: Props) => {
+  const [projectFilter, setProjectFilter] = useState<string>('all')
+  const [tasks, setTasks] = useState<Task[]>([])
+  const [activities, setActivities] = useState<Activity[]>([])
+  const [loading, setLoading] = useState(false)
+
+  const { request } = useMemo(() => createApiClient(auth.token), [auth.token])
+
+  useEffect(() => {
+    const url = projectFilter === 'all'
+      ? '/api/dashboard'
+      : `/api/dashboard?projectId=${projectFilter}`
+    let cancelled = false
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setLoading(true)
+    request<{ data: { tasks: Task[]; activities: Activity[] } }>(url)
+      .then((body) => {
+        if (cancelled) return
+        setTasks(body.data.tasks)
+        setActivities(body.data.activities.slice(0, 8))
+      })
+      .catch(() => undefined)
+      .finally(() => { if (!cancelled) setLoading(false) })
+    return () => { cancelled = true }
+  }, [projectFilter, request])
+
   const [renderedAt] = useState(() => Date.now())
   const dueSoonCount = tasks.filter((task) => {
     if (!task.dueDate || task.status === 'done') return false
@@ -32,26 +52,34 @@ export const DashboardOverview = ({
     return due >= renderedAt && due - renderedAt <= 7 * 86_400_000
   }).length
 
+  const selectedProject = projects.find((p) => p._id === projectFilter)
+  const displayMembers = selectedProject?.members ?? []
+
   const stats = [
-    { label: 'Total Tasks', value: tasks.length, hint: 'All tasks in project', icon: '□', tone: 'purple' },
-    { label: 'In Progress', value: tasks.filter((task) => task.status === 'in-progress').length, hint: 'Tasks in progress', icon: '▣', tone: 'amber' },
-    { label: 'Completed', value: tasks.filter((task) => task.status === 'done').length, hint: 'Tasks completed', icon: '✓', tone: 'green' },
+    { label: 'Total Tasks', value: tasks.length, hint: 'All tasks in scope', icon: '□', tone: 'purple' },
+    { label: 'In Progress', value: tasks.filter((t) => t.status === 'in-progress').length, hint: 'Tasks in progress', icon: '▣', tone: 'amber' },
+    { label: 'Completed', value: tasks.filter((t) => t.status === 'done').length, hint: 'Tasks completed', icon: '✓', tone: 'green' },
     { label: 'Due Soon', value: dueSoonCount, hint: 'Tasks due this week', icon: '◷', tone: 'blue' },
   ]
+
+  const heroTitle = projectFilter === 'all' ? 'All Projects' : (selectedProject?.title ?? 'Dashboard')
+  const heroDesc = projectFilter === 'all'
+    ? 'Showing combined data across all your projects.'
+    : (selectedProject?.description || 'No description yet.')
 
   return (
     <section className="dashboard-overview">
       <div className="hero-actions-row">
         <article className="project-hero">
           <div className="project-hero-copy">
-            <p className="hero-greeting">Good to see you, {userName}!</p>
-            <h1>{selectedProject?.title || 'Select a project'}</h1>
-            <p>{selectedProject?.description || 'Create or choose a project to begin.'}</p>
+            <p className="hero-greeting">Good to see you, {auth.user.name}!</p>
+            <h1>{heroTitle}</h1>
+            <p>{heroDesc}</p>
 
             {selectedProject && (
               <div className="hero-members">
                 <PresencePill
-                  users={members.map((member, index) => ({
+                  users={displayMembers.map((member, index) => ({
                     id: typeof member === 'string' ? `${member}-${index}` : member.id || member._id || `${index}`,
                     name: getMemberName(member),
                   }))}
@@ -63,36 +91,45 @@ export const DashboardOverview = ({
 
           <div className="hero-illustration" aria-hidden="true">
             <div className="mini-window">
-              <span />
-              <span />
-              <span />
+              <span /><span /><span />
               <div className="mini-row mini-row-short" />
-              <div className="mini-chart">
-                <i />
-                <i />
-                <i />
-              </div>
+              <div className="mini-chart"><i /><i /><i /></div>
               <div className="mini-row" />
             </div>
             <div className="mini-leaf" />
           </div>
         </article>
 
-        {selectedProject && (
-          <aside className="quick-actions">
-            <h2>Quick Actions</h2>
-            <button type="button" className="quick-primary" onClick={onOpenTasks}>
-              <span>+</span>
-              Create New Task
-            </button>
-            <button type="button" className="quick-secondary" onClick={onOpenMembers}>
-              Invite Member
-            </button>
-          </aside>
-        )}
+        <aside className="quick-actions">
+          <h2>Quick Actions</h2>
+          <label className="project-selector" style={{ marginBottom: '0.75rem' }}>
+            <span>Scope</span>
+            <div className="project-selector-control">
+              <i className="project-selector-dot" />
+              <select
+                value={projectFilter}
+                onChange={(e) => setProjectFilter(e.target.value)}
+              >
+                <option value="all">All Projects</option>
+                {projects.map((p) => (
+                  <option key={p._id} value={p._id}>{p.title}</option>
+                ))}
+              </select>
+            </div>
+          </label>
+          <button type="button" className="quick-primary" onClick={onOpenTasks}>
+            <span>+</span>
+            Create New Task
+          </button>
+          <button type="button" className="quick-secondary" onClick={onOpenMembers}>
+            Invite Member
+          </button>
+        </aside>
       </div>
 
-      {selectedProject && (
+      {loading ? (
+        <p className="empty">Loading...</p>
+      ) : (
         <>
           <div className="stats-grid">
             {stats.map((stat) => (
