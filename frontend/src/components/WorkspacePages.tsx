@@ -1,14 +1,16 @@
 import { useEffect, useMemo, useState } from 'react'
 import type { FormEvent } from 'react'
 import { createApiClient } from '../api/client'
-import type { Activity, AuthState, Member, Project, TaskFilters, TaskPriority, TaskStatus } from '../types'
+import type { Activity, AuthState, Member, Project, ProjectMember, ProjectRole, TaskFilters, TaskPriority, TaskStatus } from '../types'
 import { formatDate } from '../utils/date'
 import { getMemberId, getMemberName } from '../utils/member'
 import { STATUS_LABELS, STATUS_ORDER, PRIORITY_LABELS, PRIORITY_ORDER } from '../constants'
 import { TaskBoard } from './TaskBoard'
 import { CreateTaskModal } from './CreateTaskModal'
+import { AddMemberModal } from './AddMemberModal'
 import type { TaskForm } from './TaskComposer'
 import taskStyles from './Tasks/Tasks.module.css'
+import memberStyles from './Members/Members.module.css'
 
 type ProjectForm = { title: string; description: string }
 
@@ -268,61 +270,161 @@ export const TasksPage = ({
 }
 
 type MembersPageProps = {
-  selectedProject?: Project
-  members: Array<Member | string>
+  auth: AuthState
+  projects: Project[]
+  selectedProjectId: string
+  onSelectProject: (id: string) => void
+  projectMembers: ProjectMember[]
   memberEmail: string
+  memberRole: ProjectRole
   setMemberEmail: (value: string) => void
+  setMemberRole: (role: ProjectRole) => void
   onAddMember: (event: FormEvent) => void
+  onChangeMemberRole: (userId: string, role: ProjectRole) => void
+  onRemoveMember: (userId: string) => void
 }
 
+const ROLE_CLASS: Record<ProjectRole, string> = {
+  owner:   memberStyles.roleOwner,
+  manager: memberStyles.roleManager,
+  member:  memberStyles.roleMember,
+  viewer:  memberStyles.roleViewer,
+}
+
+const ASSIGNABLE_ROLES: ProjectRole[] = ['manager', 'member', 'viewer']
+
 export const MembersPage = ({
-  selectedProject,
-  members,
+  auth,
+  projects,
+  selectedProjectId,
+  onSelectProject,
+  projectMembers,
   memberEmail,
+  memberRole,
   setMemberEmail,
+  setMemberRole,
   onAddMember,
-}: MembersPageProps) => (
-  <section className="section-page members-page">
-    <div className="page-header">
-      <div>
-        <p className="section-kicker">Members</p>
-        <h1>Manage the people working on your projects.</h1>
-        <p>{selectedProject ? selectedProject.title : 'Select a project to view members.'}</p>
-      </div>
-    </div>
+  onChangeMemberRole,
+  onRemoveMember,
+}: MembersPageProps) => {
+  const [inviteOpen, setInviteOpen] = useState(false)
+  const selectedProject = projects.find((p) => p._id === selectedProjectId)
 
-    {selectedProject && (
-      <>
-        <form className="member-invite-card" onSubmit={onAddMember}>
-          <input
-            required
-            maxLength={120}
-            type="email"
-            placeholder="member@company.com"
-            value={memberEmail}
-            onChange={(e) => setMemberEmail(e.target.value)}
-          />
-          <button type="submit">Invite Member</button>
-        </form>
+  const currentUserMember = projectMembers.find(
+    (m) => m._id === auth.user.id,
+  )
+  const isAdmin = auth.user.role === 'admin'
+  const canManage = isAdmin || (currentUserMember?.projectRole === 'owner') || (currentUserMember?.projectRole === 'manager')
+  const canAssignRoles = isAdmin || currentUserMember?.projectRole === 'owner'
 
-        <div className="member-grid">
-          {members.map((member, index) => {
-            const name = getMemberName(member)
-            return (
-              <article className="member-card" key={getMemberId(member) || index}>
-                <span className="user-avatar">{name[0]?.toUpperCase() || '?'}</span>
-                <div>
-                  <strong>{name}</strong>
-                  <small>{typeof member === 'string' ? 'Project member' : member.email}</small>
-                </div>
-              </article>
-            )
-          })}
+  const handleInvite = (e: FormEvent) => {
+    onAddMember(e)
+    setInviteOpen(false)
+  }
+
+  return (
+    <section className="section-page members-page">
+      <div className="page-header">
+        <div>
+          <p className="section-kicker">Members</p>
+          <h1>Manage the people working on your projects.</h1>
         </div>
-      </>
-    )}
-  </section>
-)
+      </div>
+
+      {/* ── Toolbar ── */}
+      <div className={memberStyles.toolbar}>
+        <select
+          className={memberStyles.projectSelect}
+          value={selectedProjectId}
+          onChange={(e) => onSelectProject(e.target.value)}
+          disabled={projects.length === 0}
+          aria-label="Select project"
+        >
+          {projects.length === 0 && <option value="">No projects</option>}
+          {projects.map((p) => (
+            <option key={p._id} value={p._id}>{p.title}</option>
+          ))}
+        </select>
+        <div className={memberStyles.spacer} />
+        {selectedProject && canManage && (
+          <button
+            type="button"
+            className={`primary ${memberStyles.inviteBtn}`}
+            onClick={() => setInviteOpen(true)}
+          >
+            + Invite Member
+          </button>
+        )}
+      </div>
+
+      {/* ── Member list ── */}
+      {selectedProject ? (
+        projectMembers.length === 0 ? (
+          <p className={memberStyles.empty}>No members found.</p>
+        ) : (
+          <div className={memberStyles.memberList}>
+            {projectMembers.map((m) => (
+              <div key={m._id} className={memberStyles.memberRow}>
+                <span className={memberStyles.avatar}>
+                  {m.name[0]?.toUpperCase() || '?'}
+                </span>
+
+                <div className={memberStyles.info}>
+                  <div className={memberStyles.name}>{m.name}</div>
+                  <div className={memberStyles.email}>{m.email}</div>
+                </div>
+
+                {/* Role — editable for non-owners if actor has assign_roles */}
+                {m.projectRole === 'owner' || !canAssignRoles ? (
+                  <span className={`${memberStyles.roleBadge} ${ROLE_CLASS[m.projectRole]}`}>
+                    {m.projectRole}
+                  </span>
+                ) : (
+                  <select
+                    className={memberStyles.roleSelect}
+                    value={m.projectRole}
+                    aria-label={`Role for ${m.name}`}
+                    onChange={(e) => onChangeMemberRole(m._id, e.target.value as ProjectRole)}
+                  >
+                    {ASSIGNABLE_ROLES.map((r) => (
+                      <option key={r} value={r}>{r}</option>
+                    ))}
+                  </select>
+                )}
+
+                {/* Remove — only for non-owners, only if actor can manage */}
+                {m.projectRole !== 'owner' && canManage && (
+                  <button
+                    type="button"
+                    className={memberStyles.removeBtn}
+                    aria-label={`Remove ${m.name}`}
+                    onClick={() => onRemoveMember(m._id)}
+                  >
+                    ✕
+                  </button>
+                )}
+              </div>
+            ))}
+          </div>
+        )
+      ) : (
+        <p className={memberStyles.empty}>Select a project to view members.</p>
+      )}
+
+      {/* ── Invite modal ── */}
+      {inviteOpen && (
+        <AddMemberModal
+          email={memberEmail}
+          role={memberRole}
+          onEmailChange={setMemberEmail}
+          onRoleChange={setMemberRole}
+          onSubmit={handleInvite}
+          onClose={() => setInviteOpen(false)}
+        />
+      )}
+    </section>
+  )
+}
 
 type ActivityPageProps = {
   auth: AuthState

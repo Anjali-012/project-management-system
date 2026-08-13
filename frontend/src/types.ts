@@ -5,7 +5,18 @@ export type User = {
   role: 'admin' | 'member'
 }
 
+export type ProjectRole = 'owner' | 'manager' | 'member' | 'viewer'
+
 export type Member = Pick<User, 'id' | 'name' | 'email' | 'role'> & { _id?: string }
+
+export type ProjectMember = {
+  _id: string
+  name: string
+  email: string
+  globalRole: 'admin' | 'member'
+  projectRole: ProjectRole
+  joinedAt: string
+}
 
 export type Project = {
   _id: string

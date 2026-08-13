@@ -12,6 +12,8 @@ import type {
   AuthState,
   Notification,
   Project,
+  ProjectMember,
+  ProjectRole,
 } from '../types'
 import { getMemberId } from '../utils/member'
 import { validateField } from '../utils/validation'
@@ -26,6 +28,8 @@ export const useWorkspace = (
   const [notifications, setNotifications] = useState<Notification[]>([])
   const [loading, setLoading] = useState(false)
   const [memberEmail, setMemberEmail] = useState('')
+  const [memberRole, setMemberRole] = useState<ProjectRole>('member')
+  const [projectMembers, setProjectMembers] = useState<ProjectMember[]>([])
   const [projectForm, setProjectForm] = useState({ title: '', description: '' })
   const socketRef = useRef<Socket | null>(null)
   const [socketConnected, setSocketConnected] = useState(false)
@@ -70,7 +74,6 @@ export const useWorkspace = (
     }
     load()
   }, [auth, request, showToast])
-
   // ── Load notifications ─────────────────────────────────────────────────────
 
   useEffect(() => {
@@ -108,6 +111,16 @@ export const useWorkspace = (
     }
   }
 
+  const loadProjectMembers = async (projectId: string) => {
+    if (!projectId) return
+    try {
+      const body = await request<{ data: ProjectMember[] }>(`/api/projects/${projectId}/members`)
+      setProjectMembers(body.data)
+    } catch {
+      setProjectMembers([])
+    }
+  }
+
   const addMember = async (event: FormEvent) => {
     event.preventDefault()
     if (!selectedProjectId) return
@@ -120,14 +133,65 @@ export const useWorkspace = (
     try {
       const body = await request<{ data: Project }>(`/api/projects/${selectedProjectId}/members`, {
         method: 'POST',
-        body: JSON.stringify({ email: memberEmail.trim() }),
+        body: JSON.stringify({ email: memberEmail.trim(), role: memberRole }),
       })
       setProjects((current) => current.map((p) => (p._id === body.data._id ? body.data : p)))
       setMemberEmail('')
+      setMemberRole('member')
+      await loadProjectMembers(selectedProjectId)
+      showToast('Member added successfully', 'success')
     } catch (err) {
       showToast(err instanceof Error ? err.message : 'Could not add member')
     }
   }
+
+  const changeMemberRole = async (userId: string, role: ProjectRole) => {
+    if (!selectedProjectId) return
+    try {
+      await request(`/api/projects/${selectedProjectId}/members/${userId}/role`, {
+        method: 'PATCH',
+        body: JSON.stringify({ role }),
+      })
+      setProjectMembers((current) =>
+        current.map((m) => (m._id === userId ? { ...m, projectRole: role } : m)),
+      )
+      showToast('Role updated', 'success')
+    } catch (err) {
+      showToast(err instanceof Error ? err.message : 'Could not update role')
+    }
+  }
+
+  const removeMember = async (userId: string) => {
+    if (!selectedProjectId) return
+    try {
+      await request(`/api/projects/${selectedProjectId}/members/${userId}`, { method: 'DELETE' })
+      setProjectMembers((current) => current.filter((m) => m._id !== userId))
+      setProjects((current) =>
+        current.map((p) =>
+          p._id === selectedProjectId
+            ? { ...p, members: p.members.filter((m) => (typeof m === 'string' ? m : m._id ?? m.id) !== userId) }
+            : p,
+        ),
+      )
+      showToast('Member removed', 'success')
+    } catch (err) {
+      showToast(err instanceof Error ? err.message : 'Could not remove member')
+    }
+  }
+
+  // Load enriched members when selected project changes
+  useEffect(() => {
+    if (!selectedProjectId) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setProjectMembers([])
+      return
+    }
+    let cancelled = false
+    request<{ data: ProjectMember[] }>(`/api/projects/${selectedProjectId}/members`)
+      .then((body) => { if (!cancelled) setProjectMembers(body.data) })
+      .catch(() => { if (!cancelled) setProjectMembers([]) })
+    return () => { cancelled = true }
+  }, [selectedProjectId, request])
 
   const markNotificationsRead = useCallback(async () => {
     try {
@@ -142,6 +206,7 @@ export const useWorkspace = (
     setSelectedProjectId('')
     setProjects([])
     setNotifications([])
+    setProjectMembers([])
   }
 
   const realtimeStatus = socketConnected ? 'Real-time connected' : 'Real-time disconnected'
@@ -150,10 +215,13 @@ export const useWorkspace = (
     projects, selectedProjectId, setSelectedProjectId, selectedProject,
     selectedProjectMembers: selectedProjectMembers.map(getMemberId),
     selectedProjectMembersRaw: selectedProjectMembers,
+    projectMembers,
     notifications, loading, socketConnected, realtimeStatus,
     projectForm, setProjectForm,
     memberEmail, setMemberEmail,
+    memberRole, setMemberRole,
     socketRef,
-    createProject, addMember, markNotificationsRead, logout,
+    createProject, addMember, changeMemberRole, removeMember,
+    markNotificationsRead, logout,
   }
 }

@@ -114,11 +114,18 @@ function App() {
 
           {activeSection === 'members' && (
             <MembersPage
-              selectedProject={workspace.selectedProject}
-              members={workspace.selectedProjectMembersRaw}
+              auth={auth}
+              projects={workspace.projects}
+              selectedProjectId={workspace.selectedProjectId}
+              onSelectProject={workspace.setSelectedProjectId}
+              projectMembers={workspace.projectMembers}
               memberEmail={workspace.memberEmail}
+              memberRole={workspace.memberRole}
               setMemberEmail={workspace.setMemberEmail}
+              setMemberRole={workspace.setMemberRole}
               onAddMember={workspace.addMember}
+              onChangeMemberRole={workspace.changeMemberRole}
+              onRemoveMember={workspace.removeMember}
             />
           )}
 
