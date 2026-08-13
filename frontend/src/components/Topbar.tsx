@@ -1,40 +1,46 @@
-import type { FormEvent } from 'react'
-import type { PresenceUser, Project } from '../types'
-import { PresencePill } from './PresencePill'
+import type { AuthState, Notification, TaskFilters } from '../types'
 
 type Props = {
-  selectedProject?: Project
+  auth: AuthState
   realtimeStatus: string
-  memberEmail: string
-  setMemberEmail: (v: string) => void
-  onAddMember: (e: FormEvent) => void
-  presence: PresenceUser[]
+  notifications: Notification[]
+  filters: TaskFilters
+  onFiltersChange: (filters: TaskFilters) => void
+  onLogout: () => void
 }
 
 export const Topbar = ({
-  selectedProject, realtimeStatus, memberEmail, setMemberEmail, onAddMember, presence,
-}: Props) => (
-  <header className="topbar">
-    <div>
-      <p className="eyebrow">{realtimeStatus}</p>
-      <h1>{selectedProject?.title || 'Select a project'}</h1>
-      <p>{selectedProject?.description || 'Create or choose a project to begin.'}</p>
-    </div>
+  auth, realtimeStatus, notifications, filters, onFiltersChange, onLogout,
+}: Props) => {
+  const unreadCount = notifications.filter((notification) => !notification.isRead).length
 
-    <div className="topbar-right">
-      {selectedProject && <PresencePill users={presence} />}
+  return (
+    <header className="topbar">
+      <label className="global-search">
+        <span>⌕</span>
+        <input
+          placeholder="Search tasks, projects, members..."
+          value={filters.search}
+          onChange={(event) => onFiltersChange({ ...filters, search: event.target.value })}
+        />
+        <kbd>⌘ K</kbd>
+      </label>
 
-      {selectedProject && (
-        <form className="member-form" onSubmit={onAddMember}>
-          <input
-            required maxLength={120} type="email"
-            placeholder="member@company.com"
-            value={memberEmail}
-            onChange={(e) => setMemberEmail(e.target.value)}
-          />
-          <button type="submit">Add member</button>
-        </form>
-      )}
-    </div>
-  </header>
-)
+      <div className="topbar-right">
+        <span className="connection-state">{realtimeStatus}</span>
+        <button type="button" className="notification-button" aria-label={`${unreadCount} unread notifications`}>
+          ♢
+          {unreadCount > 0 && <span>{unreadCount}</span>}
+        </button>
+        <button type="button" className="topbar-user" onClick={onLogout} aria-label="Sign out">
+          <span className="user-avatar">{auth.user.name[0]?.toUpperCase() || '?'}</span>
+          <span>
+            <strong>{auth.user.name}</strong>
+            <small>{auth.user.role}</small>
+          </span>
+          <i>⌄</i>
+        </button>
+      </div>
+    </header>
+  )
+}

@@ -32,8 +32,11 @@ export const Inspector = ({ notifications, activities, onMarkNotificationsRead }
           ) : (
             notifications.map((n) => (
               <article className={`feed-item ${!n.isRead ? 'feed-item-unread' : ''}`} key={n._id}>
-                <strong>{n.message}</strong>
-                <small>{formatDate(n.createdAt)}</small>
+                <span className="feed-dot" />
+                <div>
+                  <strong>{n.message}</strong>
+                  <small>{formatDate(n.createdAt)}</small>
+                </div>
               </article>
             ))
           )}
@@ -51,10 +54,13 @@ export const Inspector = ({ notifications, activities, onMarkNotificationsRead }
           ) : (
             activities.map((a) => (
               <article className="feed-item" key={a._id}>
-                <strong>{a.action.replaceAll('_', ' ')}</strong>
-                <small>
-                  {a.user?.name || 'System'} — {formatDate(a.createdAt)}
-                </small>
+                <span className="activity-icon">{a.action[0]?.toUpperCase() || 'A'}</span>
+                <div>
+                  <strong>{a.action.replaceAll('_', ' ')}</strong>
+                  <small>
+                    {a.user?.name || 'System'} - {formatDate(a.createdAt)}
+                  </small>
+                </div>
               </article>
             ))
           )}

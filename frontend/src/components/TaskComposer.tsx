@@ -21,6 +21,7 @@ type Props = {
 export const TaskComposer = ({ taskForm, setTaskForm, members, onCreateTask }: Props) => (
   <form className="task-composer" onSubmit={onCreateTask}>
     <input
+      name="task-title"
       required minLength={3} maxLength={100}
       pattern="[A-Za-z0-9][A-Za-z0-9 .,'()/_-]*"
       placeholder="Task title"

@@ -1,73 +1,44 @@
-import type { FormEvent } from 'react'
-import type { AuthState, Project } from '../types'
-
-type ProjectForm = { title: string; description: string }
+export type WorkspaceSection = 'dashboard' | 'projects' | 'tasks' | 'members' | 'calendar' | 'activity' | 'reports' | 'settings'
 
 type Props = {
-  auth: AuthState
-  projects: Project[]
-  selectedProjectId: string
-  projectForm: ProjectForm
-  setProjectForm: (form: ProjectForm) => void
-  onCreateProject: (e: FormEvent) => void
-  onSelectProject: (id: string) => void
-  onLogout: () => void
+  activeSection: WorkspaceSection
+  onNavigate: (section: WorkspaceSection) => void
 }
 
 export const Sidebar = ({
-  auth,
-  projects,
-  selectedProjectId,
-  projectForm,
-  setProjectForm,
-  onCreateProject,
-  onSelectProject,
-  onLogout,
+  activeSection,
+  onNavigate,
 }: Props) => (
   <aside className="sidebar">
     <div className="brand">
-      <span>PM</span>
+      <span className="brand-logo">⌂</span>
       <div>
-        <strong>{auth.user.name}</strong>
-        <small className={`role-badge role-${auth.user.role}`}>{auth.user.role}</small>
+        <strong>PMS</strong>
+        <small>Project Management System</small>
       </div>
     </div>
 
-    <form className="compact-form" onSubmit={onCreateProject}>
-      <input
-        required
-        minLength={3}
-        maxLength={80}
-        pattern="[A-Za-z0-9][A-Za-z0-9 .,'()/_-]*"
-        placeholder="New project"
-        value={projectForm.title}
-        onChange={(e) => setProjectForm({ ...projectForm, title: e.target.value })}
-      />
-      <textarea
-        maxLength={300}
-        placeholder="Description"
-        value={projectForm.description}
-        onChange={(e) => setProjectForm({ ...projectForm, description: e.target.value })}
-      />
-      <button type="submit">Add project</button>
-    </form>
-
-    <nav className="project-list">
-      {projects.map((project) => (
+    <nav className="main-nav" aria-label="Primary">
+      {[
+        ['dashboard', '⌂', 'Dashboard'],
+        ['projects', '□', 'Projects'],
+        ['tasks', '☑', 'Tasks'],
+        ['members', '♙', 'Members'],
+        ['calendar', '▣', 'Calendar'],
+        ['activity', '◷', 'Activity'],
+        ['reports', '⌁', 'Reports'],
+        ['settings', '⚙', 'Settings'],
+      ].map(([section, icon, label]) => (
         <button
-          key={project._id}
+          key={section}
           type="button"
-          className={project._id === selectedProjectId ? 'selected' : ''}
-          onClick={() => onSelectProject(project._id)}
+          className={activeSection === section ? 'active' : ''}
+          onClick={() => onNavigate(section as WorkspaceSection)}
         >
-          <strong>{project.title}</strong>
-          <small>{project.members.length} members</small>
+          <span>{icon}</span>
+          {label}
         </button>
       ))}
     </nav>
-
-    <button className="ghost" type="button" onClick={onLogout}>
-      Sign out
-    </button>
   </aside>
 )

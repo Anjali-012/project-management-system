@@ -1,9 +1,9 @@
 import { memo } from 'react'
 import type { Member, Task, TaskStatus } from '../types'
-import { getMemberId, getMemberName, getAssignedUserId } from '../utils/member'
-import { STATUS_ORDER, STATUS_LABELS } from '../constants'
-import { PriorityBadge } from './PriorityBadge'
+import { getAssignedUserId, getMemberId, getMemberName } from '../utils/member'
+import { STATUS_LABELS, STATUS_ORDER } from '../constants'
 import { DueDateBadge } from './DueDateBadge'
+import { PriorityBadge } from './PriorityBadge'
 
 type Props = {
   task: Task
@@ -24,6 +24,7 @@ export const TaskCard = memo(({
 }: Props) => {
   const creatorId = task.createdBy?.id || task.createdBy?._id || ''
   const canDelete = isAdmin || creatorId === currentUserId
+  const assignedName = task.assignedTo?.name || 'Unassigned'
 
   return (
     <article className="task-card" draggable onDragStart={() => onDragStart(task._id)}>
@@ -32,41 +33,47 @@ export const TaskCard = memo(({
         {task.dueDate && <DueDateBadge dueDate={task.dueDate} />}
       </div>
 
-      <div>
+      <div className="task-card-body">
         <h3>{task.title}</h3>
         {task.description && <p>{task.description}</p>}
       </div>
 
-      <small>{task.assignedTo ? `Assigned to ${task.assignedTo.name}` : 'Unassigned'}</small>
+      <div className="assignee-row">
+        <small>Assigned to</small>
+        <span className="mini-avatar">{assignedName[0]?.toUpperCase() || '?'}</span>
+        <strong>{assignedName}</strong>
+      </div>
 
-      <label className="inline-field">
-        Task member
-        <select value={getAssignedUserId(task.assignedTo)} onChange={(e) => onAssign(task, e.target.value)}>
-          <option value="">Unassigned</option>
-          {members.map((member) => (
-            <option key={getMemberId(member)} value={getMemberId(member)}>
-              {getMemberName(member)}
-            </option>
-          ))}
-        </select>
-      </label>
+      <div className="task-card-controls">
+        <label className="inline-field">
+          Task member
+          <select value={getAssignedUserId(task.assignedTo)} onChange={(e) => onAssign(task, e.target.value)}>
+            <option value="">Unassigned</option>
+            {members.map((member) => (
+              <option key={getMemberId(member)} value={getMemberId(member)}>
+                {getMemberName(member)}
+              </option>
+            ))}
+          </select>
+        </label>
 
-      <label className="inline-field">
-        Status
-        <select value={task.status} onChange={(e) => onStatusChange(task, e.target.value as TaskStatus)}>
-          {STATUS_ORDER.map((option) => (
-            <option key={option} value={option}>{STATUS_LABELS[option]}</option>
-          ))}
-        </select>
-      </label>
+        <label className="inline-field">
+          Status
+          <select value={task.status} onChange={(e) => onStatusChange(task, e.target.value as TaskStatus)}>
+            {STATUS_ORDER.map((option) => (
+              <option key={option} value={option}>{STATUS_LABELS[option]}</option>
+            ))}
+          </select>
+        </label>
+      </div>
 
       <div className={`task-actions ${canDelete ? '' : 'task-actions-no-delete'}`}>
-        <button type="button" onClick={() => onEdit(task)}>Edit</button>
+        <button type="button" onClick={() => onEdit(task)}>Edit Task</button>
         <button type="button" className="btn-comments" onClick={() => onOpenComments(task)}>
-          💬 {task.comments?.length ?? 0}
+          ◌ {task.comments?.length ?? 0}
         </button>
         {canDelete && (
-          <button type="button" onClick={() => onDelete(task)}>Delete</button>
+          <button type="button" onClick={() => onDelete(task)} aria-label={`Delete ${task.title}`}>⋮</button>
         )}
       </div>
     </article>

@@ -1,24 +1,22 @@
+import { useState } from 'react'
 import { useAuth } from './hooks/useAuth'
 import { useToast } from './hooks/useToast'
 import { useWorkspace } from './hooks/useWorkspace'
 
 import { AuthScreen } from './components/AuthScreen'
 import { CommentPanel } from './components/CommentPanel'
+import { DashboardOverview } from './components/DashboardOverview'
 import { EditTaskModal } from './components/EditTaskModal'
-import { Inspector } from './components/Inspector'
-import { Sidebar } from './components/Sidebar'
-import { TaskBoard } from './components/TaskBoard'
-import { TaskComposer } from './components/TaskComposer'
-import { TaskFiltersBar } from './components/TaskFiltersBar'
+import { Sidebar, type WorkspaceSection } from './components/Sidebar'
 import { ToastMessage } from './components/ToastMessage'
 import { Topbar } from './components/Topbar'
+import { ActivityPage, MembersPage, PlaceholderPage, ProjectsPage, TasksPage } from './components/WorkspacePages'
 
 import './App.css'
 
-const EMPTY_FILTERS = { search: '', status: '' as const, priority: '' as const, assignedTo: '' }
-
 function App() {
   const { toast, showToast } = useToast()
+  const [activeSection, setActiveSection] = useState<WorkspaceSection>('dashboard')
 
   const {
     auth, authMode, setAuthMode, authForm, setAuthForm,
@@ -42,70 +40,98 @@ function App() {
   }
 
   const handleLogout = () => { workspace.logout(); logoutAuth() }
+  const focusTaskComposer = () => {
+    setActiveSection('tasks')
+    window.setTimeout(() => {
+      document.querySelector<HTMLInputElement>('.task-composer input[name="task-title"]')?.focus()
+    }, 0)
+  }
+  const openMembers = () => setActiveSection('members')
 
   return (
     <main className="app-shell">
       <Sidebar
-        auth={auth}
-        projects={workspace.projects}
-        selectedProjectId={workspace.selectedProjectId}
-        projectForm={workspace.projectForm}
-        setProjectForm={workspace.setProjectForm}
-        onCreateProject={workspace.createProject}
-        onSelectProject={workspace.setSelectedProjectId}
-        onLogout={handleLogout}
+        activeSection={activeSection}
+        onNavigate={setActiveSection}
       />
 
       <section className="workspace">
         <Topbar
-          selectedProject={workspace.selectedProject}
+          auth={auth}
           realtimeStatus={workspace.realtimeStatus}
-          memberEmail={workspace.memberEmail}
-          setMemberEmail={workspace.setMemberEmail}
-          onAddMember={workspace.addMember}
-          presence={workspace.presence}
+          notifications={workspace.notifications}
+          filters={workspace.filters}
+          onFiltersChange={workspace.setFilters}
+          onLogout={handleLogout}
         />
 
-        {workspace.selectedProject && (
-          <>
-            <TaskComposer
+        <div className="workspace-scroll">
+          {workspace.loading && <p className="empty">Loading workspace...</p>}
+
+          {activeSection === 'dashboard' && (
+            <DashboardOverview
+              userName={auth.user.name}
+              selectedProject={workspace.selectedProject}
+              tasks={workspace.tasks}
+              members={workspace.selectedProjectMembersRaw}
+              activities={workspace.activities}
+              notifications={workspace.notifications}
+              onOpenTasks={focusTaskComposer}
+              onOpenMembers={openMembers}
+            />
+          )}
+
+          {activeSection === 'projects' && (
+            <ProjectsPage
+              projects={workspace.projects}
+              selectedProjectId={workspace.selectedProjectId}
+              projectForm={workspace.projectForm}
+              setProjectForm={workspace.setProjectForm}
+              onCreateProject={workspace.createProject}
+              onSelectProject={workspace.setSelectedProjectId}
+            />
+          )}
+
+          {activeSection === 'tasks' && (
+            <TasksPage
+              projects={workspace.projects}
+              selectedProjectId={workspace.selectedProjectId}
+              selectedProject={workspace.selectedProject}
+              onSelectProject={workspace.setSelectedProjectId}
               taskForm={workspace.taskForm}
               setTaskForm={workspace.setTaskForm}
               members={workspace.selectedProjectMembersRaw}
               onCreateTask={workspace.createTask}
-            />
-            <TaskFiltersBar
               filters={workspace.filters}
-              members={workspace.selectedProjectMembersRaw}
-              onChange={workspace.setFilters}
-              onClear={() => workspace.setFilters(EMPTY_FILTERS)}
+              onFiltersChange={workspace.setFilters}
+              tasksByStatus={workspace.tasksByStatus}
+              currentUserId={auth.user.id}
+              isAdmin={auth.user.role === 'admin'}
+              onDragStart={workspace.setDraggedTaskId}
+              onDrop={workspace.handleDrop}
+              onAssign={workspace.assignTaskMember}
+              onStatusChange={workspace.updateTaskStatus}
+              onEdit={workspace.openTaskEdit}
+              onDelete={workspace.deleteTask}
+              onOpenComments={workspace.setCommentTask}
             />
-          </>
-        )}
+          )}
 
-        {workspace.loading && <p className="empty">Loading workspace...</p>}
+          {activeSection === 'members' && (
+            <MembersPage
+              selectedProject={workspace.selectedProject}
+              members={workspace.selectedProjectMembersRaw}
+              memberEmail={workspace.memberEmail}
+              setMemberEmail={workspace.setMemberEmail}
+              onAddMember={workspace.addMember}
+            />
+          )}
 
-        <section className="workspace-grid">
-          <TaskBoard
-            tasksByStatus={workspace.tasksByStatus}
-            members={workspace.selectedProjectMembersRaw}
-            currentUserId={auth.user.id}
-            isAdmin={auth.user.role === 'admin'}
-            onDragStart={workspace.setDraggedTaskId}
-            onDrop={workspace.handleDrop}
-            onAssign={workspace.assignTaskMember}
-            onStatusChange={workspace.updateTaskStatus}
-            onEdit={workspace.openTaskEdit}
-            onDelete={workspace.deleteTask}
-            onOpenComments={workspace.setCommentTask}
-          />
-
-          <Inspector
-            notifications={workspace.notifications}
-            activities={workspace.activities}
-            onMarkNotificationsRead={workspace.markNotificationsRead}
-          />
-        </section>
+          {activeSection === 'activity' && <ActivityPage activities={workspace.activities} />}
+          {activeSection === 'calendar' && <PlaceholderPage title="Calendar" />}
+          {activeSection === 'reports' && <PlaceholderPage title="Reports" />}
+          {activeSection === 'settings' && <PlaceholderPage title="Settings" />}
+        </div>
       </section>
 
       {workspace.editTask && workspace.selectedProject && (

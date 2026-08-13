@@ -35,21 +35,35 @@ export const TaskBoard = ({
         </div>
 
         <div className="task-list">
-          {tasksByStatus[status].map((task) => (
-            <TaskCard
-              key={task._id}
-              task={task}
-              members={members}
-              currentUserId={currentUserId}
-              isAdmin={isAdmin}
-              onDragStart={onDragStart}
-              onAssign={onAssign}
-              onStatusChange={onStatusChange}
-              onEdit={onEdit}
-              onDelete={onDelete}
-              onOpenComments={onOpenComments}
-            />
-          ))}
+          {tasksByStatus[status].length === 0 ? (
+            <div className="column-empty">
+              <span>{status === 'done' ? '✓' : '▤'}</span>
+              <strong>{status === 'done' ? 'No tasks completed yet' : 'No tasks yet'}</strong>
+              <p>
+                {status === 'done'
+                  ? 'Completed tasks will appear here.'
+                  : status === 'todo'
+                    ? 'Tasks that are not started will appear here.'
+                    : 'Tasks in progress will appear here.'}
+              </p>
+            </div>
+          ) : (
+            tasksByStatus[status].map((task) => (
+              <TaskCard
+                key={task._id}
+                task={task}
+                members={members}
+                currentUserId={currentUserId}
+                isAdmin={isAdmin}
+                onDragStart={onDragStart}
+                onAssign={onAssign}
+                onStatusChange={onStatusChange}
+                onEdit={onEdit}
+                onDelete={onDelete}
+                onOpenComments={onOpenComments}
+              />
+            ))
+          )}
         </div>
       </div>
     ))}
