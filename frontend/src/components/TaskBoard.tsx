@@ -2,6 +2,7 @@ import type { DragEvent } from 'react'
 import type { Member, Task, TaskStatus } from '../types'
 import { STATUS_ORDER, STATUS_LABELS } from '../constants'
 import { TaskCard } from './TaskCard'
+import styles from './TaskBoard/TaskBoard.module.css'
 
 type Props = {
   tasksByStatus: Record<TaskStatus, Task[]>
@@ -21,22 +22,22 @@ export const TaskBoard = ({
   tasksByStatus, members, currentUserId, isAdmin,
   onDragStart, onDrop, onAssign, onStatusChange, onEdit, onDelete, onOpenComments,
 }: Props) => (
-  <section className="board">
+  <section className={styles.board}>
     {STATUS_ORDER.map((status) => (
       <div
-        className="column"
+        className={styles.column}
         key={status}
         onDragOver={(e: DragEvent<HTMLDivElement>) => e.preventDefault()}
         onDrop={() => onDrop(status)}
       >
-        <div className="column-header">
+        <div className={styles.columnHeader}>
           <h2>{STATUS_LABELS[status]}</h2>
           <span>{tasksByStatus[status].length}</span>
         </div>
 
-        <div className="task-list">
+        <div className={styles.taskList}>
           {tasksByStatus[status].length === 0 ? (
-            <div className="column-empty">
+            <div className={styles.columnEmpty}>
               <span>{status === 'done' ? '✓' : '▤'}</span>
               <strong>{status === 'done' ? 'No tasks completed yet' : 'No tasks yet'}</strong>
               <p>

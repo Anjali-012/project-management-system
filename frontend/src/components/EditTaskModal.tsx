@@ -2,6 +2,7 @@ import type { FormEvent } from 'react'
 import type { Member, TaskPriority, TaskStatus } from '../types'
 import { getMemberId, getMemberName } from '../utils/member'
 import { STATUS_ORDER, STATUS_LABELS, PRIORITY_ORDER, PRIORITY_LABELS } from '../constants'
+import styles from './EditTaskModal/EditTaskModal.module.css'
 
 export type EditForm = {
   title: string
@@ -21,9 +22,9 @@ type Props = {
 }
 
 export const EditTaskModal = ({ editForm, setEditForm, members, onSave, onClose }: Props) => (
-  <div className="modal-backdrop" role="presentation">
-    <form className="modal" onSubmit={onSave}>
-      <div className="modal-header">
+  <div className={styles.modalBackdrop} role="presentation">
+    <form className={styles.modal} onSubmit={onSave}>
+      <div className={styles.modalHeader}>
         <h2>Edit task</h2>
         <button className="icon-button" type="button" onClick={onClose}>✕</button>
       </div>
@@ -47,7 +48,7 @@ export const EditTaskModal = ({ editForm, setEditForm, members, onSave, onClose 
         />
       </label>
 
-      <div className="modal-row">
+      <div className={styles.modalRow}>
         <label>
           Priority
           <select value={editForm.priority} onChange={(e) => setEditForm({ ...editForm, priority: e.target.value as TaskPriority })}>

@@ -1,5 +1,6 @@
 import type { Activity, Notification } from '../types'
 import { formatDate } from '../utils/date'
+import styles from './Inspector/Inspector.module.css'
 
 type Props = {
   notifications: Notification[]
@@ -11,28 +12,28 @@ export const Inspector = ({ notifications, activities, onMarkNotificationsRead }
   const unreadCount = notifications.filter((n) => !n.isRead).length
 
   return (
-    <aside className="inspector">
-      <section className="panel">
-        <div className="panel-title">
+    <aside className={styles.inspector}>
+      <section className={styles.panel}>
+        <div className={styles.panelTitle}>
           <h2>Notifications</h2>
-          <div className="panel-title-right">
+          <div className={styles.panelTitleRight}>
             {unreadCount > 0 && (
-              <button type="button" className="mark-read-btn" onClick={onMarkNotificationsRead}>
+              <button type="button" className={styles.markReadBtn} onClick={onMarkNotificationsRead}>
                 Mark all read
               </button>
             )}
-            <span className={unreadCount > 0 ? 'badge-unread' : ''}>
+            <span className={unreadCount > 0 ? styles.badgeUnread : ''}>
               {unreadCount > 0 ? `${unreadCount} new` : notifications.length}
             </span>
           </div>
         </div>
-        <div className="feed-list">
+        <div className={styles.feedList}>
           {notifications.length === 0 ? (
             <p className="empty">No notifications yet.</p>
           ) : (
             notifications.map((n) => (
-              <article className={`feed-item ${!n.isRead ? 'feed-item-unread' : ''}`} key={n._id}>
-                <span className="feed-dot" />
+              <article className={`${styles.feedItem} ${!n.isRead ? styles.feedItemUnread : ''}`} key={n._id}>
+                <span className={styles.feedDot} />
                 <div>
                   <strong>{n.message}</strong>
                   <small>{formatDate(n.createdAt)}</small>
@@ -43,17 +44,17 @@ export const Inspector = ({ notifications, activities, onMarkNotificationsRead }
         </div>
       </section>
 
-      <section className="panel">
-        <div className="panel-title">
+      <section className={styles.panel}>
+        <div className={styles.panelTitle}>
           <h2>Activity</h2>
           <span>{activities.length}</span>
         </div>
-        <div className="feed-list">
+        <div className={styles.feedList}>
           {activities.length === 0 ? (
             <p className="empty">No activity yet.</p>
           ) : (
             activities.map((a) => (
-              <article className="feed-item" key={a._id}>
+              <article className={styles.feedItem} key={a._id}>
                 <span className="activity-icon">{a.action[0]?.toUpperCase() || 'A'}</span>
                 <div>
                   <strong>{a.action.replaceAll('_', ' ')}</strong>

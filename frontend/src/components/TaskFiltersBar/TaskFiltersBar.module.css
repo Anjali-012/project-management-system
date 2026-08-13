@@ -1,0 +1,69 @@
+.filtersBar {
+  flex-shrink: 0;
+  margin-top: 0;
+  display: grid;
+  grid-template-columns: minmax(220px, 1fr) repeat(3, minmax(150px, 190px)) minmax(150px, auto);
+  align-items: center;
+  gap: 12px;
+  padding: 0;
+  background: transparent;
+  border: 0;
+}
+
+.filtersBar input,
+.filtersBar select {
+  height: 50px;
+  max-width: none;
+  border-color: #dfe5f0;
+  border-radius: 10px;
+  background-color: #fff;
+  box-shadow: 0 10px 24px rgba(15, 22, 35, 0.025);
+}
+
+.filterSearch {
+  flex: 1;
+  min-width: 0;
+  max-width: 240px;
+  font-size: 13px;
+  padding: 7px 12px;
+}
+
+.filtersBar select {
+  font-size: 13px;
+  padding: 7px 28px 7px 10px;
+  width: auto;
+  min-width: 120px;
+}
+
+.filterClear {
+  flex-shrink: 0;
+  height: 50px;
+  border: 1px solid var(--border-default);
+  border-radius: 10px;
+  background: #fff;
+  color: var(--ink-500);
+  font-family: var(--font);
+  font-size: 12px;
+  font-weight: 600;
+  padding: 7px 14px;
+  cursor: pointer;
+  transition: all 0.13s;
+}
+
+.filterClear:hover {
+  border-color: var(--rose-500);
+  color: var(--rose-600);
+  background: var(--rose-50);
+}
+
+@media (max-width: 1080px) {
+  .filtersBar {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+@media (max-width: 760px) {
+  .filtersBar {
+    grid-template-columns: 1fr;
+  }
+}

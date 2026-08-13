@@ -1,6 +1,7 @@
 import type { Member, TaskFilters, TaskPriority, TaskStatus } from '../types'
 import { STATUS_LABELS, STATUS_ORDER, PRIORITY_LABELS, PRIORITY_ORDER } from '../constants'
 import { getMemberId, getMemberName } from '../utils/member'
+import styles from './TaskFiltersBar/TaskFiltersBar.module.css'
 
 type Props = {
   filters: TaskFilters
@@ -13,9 +14,9 @@ export const TaskFiltersBar = ({ filters, members, onChange, onClear }: Props) =
   const hasActive = filters.search || filters.status || filters.priority || filters.assignedTo
 
   return (
-    <div className="filters-bar">
+    <div className={styles.filtersBar}>
       <input
-        className="filter-search"
+        className={styles.filterSearch}
         placeholder="Search tasks…"
         value={filters.search}
         onChange={(e) => onChange({ ...filters, search: e.target.value })}
@@ -52,7 +53,7 @@ export const TaskFiltersBar = ({ filters, members, onChange, onClear }: Props) =
       </select>
 
       {hasActive && (
-        <button type="button" className="filter-clear" onClick={onClear}>
+        <button type="button" className={styles.filterClear} onClick={onClear}>
           Clear
         </button>
       )}

@@ -1,3 +1,5 @@
+import styles from './Sidebar/Sidebar.module.css'
+
 export type WorkspaceSection = 'dashboard' | 'projects' | 'tasks' | 'members' | 'calendar' | 'activity' | 'reports' | 'settings'
 
 type Props = {
@@ -9,16 +11,16 @@ export const Sidebar = ({
   activeSection,
   onNavigate,
 }: Props) => (
-  <aside className="sidebar">
-    <div className="brand">
-      <span className="brand-logo">⌂</span>
+  <aside className={styles.sidebar}>
+    <div className={styles.brand}>
+      <span className={styles.brandLogo}>⌂</span>
       <div>
         <strong>PMS</strong>
         <small>Project Management System</small>
       </div>
     </div>
 
-    <nav className="main-nav" aria-label="Primary">
+    <nav className={styles.mainNav} aria-label="Primary">
       {[
         ['dashboard', '⌂', 'Dashboard'],
         ['projects', '□', 'Projects'],
@@ -32,7 +34,7 @@ export const Sidebar = ({
         <button
           key={section}
           type="button"
-          className={activeSection === section ? 'active' : ''}
+          className={activeSection === section ? styles.active : ''}
           onClick={() => onNavigate(section as WorkspaceSection)}
         >
           <span>{icon}</span>

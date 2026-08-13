@@ -4,6 +4,7 @@ import { getAssignedUserId, getMemberId, getMemberName } from '../utils/member'
 import { STATUS_LABELS, STATUS_ORDER } from '../constants'
 import { DueDateBadge } from './DueDateBadge'
 import { PriorityBadge } from './PriorityBadge'
+import styles from './TaskCard/TaskCard.module.css'
 
 type Props = {
   task: Task
@@ -27,25 +28,25 @@ export const TaskCard = memo(({
   const assignedName = task.assignedTo?.name || 'Unassigned'
 
   return (
-    <article className="task-card" draggable onDragStart={() => onDragStart(task._id)}>
-      <div className="task-card-top">
+    <article className={styles.taskCard} draggable onDragStart={() => onDragStart(task._id)}>
+      <div className={styles.taskCardTop}>
         <PriorityBadge priority={task.priority ?? 'medium'} />
         {task.dueDate && <DueDateBadge dueDate={task.dueDate} />}
       </div>
 
-      <div className="task-card-body">
+      <div className={styles.taskCardBody}>
         <h3>{task.title}</h3>
         {task.description && <p>{task.description}</p>}
       </div>
 
-      <div className="assignee-row">
+      <div className={styles.assigneeRow}>
         <small>Assigned to</small>
-        <span className="mini-avatar">{assignedName[0]?.toUpperCase() || '?'}</span>
+        <span className={styles.miniAvatar}>{assignedName[0]?.toUpperCase() || '?'}</span>
         <strong>{assignedName}</strong>
       </div>
 
-      <div className="task-card-controls">
-        <label className="inline-field">
+      <div className={styles.taskCardControls}>
+        <label className={styles.inlineField}>
           Task member
           <select value={getAssignedUserId(task.assignedTo)} onChange={(e) => onAssign(task, e.target.value)}>
             <option value="">Unassigned</option>
@@ -57,7 +58,7 @@ export const TaskCard = memo(({
           </select>
         </label>
 
-        <label className="inline-field">
+        <label className={styles.inlineField}>
           Status
           <select value={task.status} onChange={(e) => onStatusChange(task, e.target.value as TaskStatus)}>
             {STATUS_ORDER.map((option) => (
@@ -67,9 +68,9 @@ export const TaskCard = memo(({
         </label>
       </div>
 
-      <div className={`task-actions ${canDelete ? '' : 'task-actions-no-delete'}`}>
+      <div className={`${styles.taskActions} ${canDelete ? '' : styles.taskActionsNoDelete}`}>
         <button type="button" onClick={() => onEdit(task)}>Edit Task</button>
-        <button type="button" className="btn-comments" onClick={() => onOpenComments(task)}>
+        <button type="button" className={styles.btnComments} onClick={() => onOpenComments(task)}>
           ◌ {task.comments?.length ?? 0}
         </button>
         {canDelete && (

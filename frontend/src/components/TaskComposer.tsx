@@ -2,6 +2,7 @@ import type { FormEvent } from 'react'
 import type { Member, TaskPriority } from '../types'
 import { getMemberId, getMemberName } from '../utils/member'
 import { PRIORITY_ORDER, PRIORITY_LABELS } from '../constants'
+import styles from './TaskComposer/TaskComposer.module.css'
 
 export type TaskForm = {
   title: string
@@ -19,7 +20,7 @@ type Props = {
 }
 
 export const TaskComposer = ({ taskForm, setTaskForm, members, onCreateTask }: Props) => (
-  <form className="task-composer" onSubmit={onCreateTask}>
+  <form className={styles.taskComposer} onSubmit={onCreateTask}>
     <input
       name="task-title"
       required minLength={3} maxLength={100}

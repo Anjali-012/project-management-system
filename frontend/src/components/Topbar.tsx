@@ -1,4 +1,5 @@
 import type { AuthState, Notification, TaskFilters } from '../types'
+import styles from './Topbar/Topbar.module.css'
 
 type Props = {
   auth: AuthState
@@ -15,9 +16,9 @@ export const Topbar = ({
   const unreadCount = notifications.filter((notification) => !notification.isRead).length
 
   return (
-    <header className="topbar">
-      <label className="global-search">
-        <span>⌕</span>
+    <header className={styles.topbar}>
+      <label className={styles.globalSearch}>
+        <span className={styles.searchIcon}>⌕</span>
         <input
           placeholder="Search tasks, projects, members..."
           value={filters.search}
@@ -26,14 +27,14 @@ export const Topbar = ({
         <kbd>⌘ K</kbd>
       </label>
 
-      <div className="topbar-right">
-        <span className="connection-state">{realtimeStatus}</span>
-        <button type="button" className="notification-button" aria-label={`${unreadCount} unread notifications`}>
+      <div className={styles.topbarRight}>
+        <span className={styles.connectionState}>{realtimeStatus}</span>
+        <button type="button" className={styles.notificationButton} aria-label={`${unreadCount} unread notifications`}>
           ♢
           {unreadCount > 0 && <span>{unreadCount}</span>}
         </button>
-        <button type="button" className="topbar-user" onClick={onLogout} aria-label="Sign out">
-          <span className="user-avatar">{auth.user.name[0]?.toUpperCase() || '?'}</span>
+        <button type="button" className={styles.topbarUser} onClick={onLogout} aria-label="Sign out">
+          <span className={styles.userAvatar}>{auth.user.name[0]?.toUpperCase() || '?'}</span>
           <span>
             <strong>{auth.user.name}</strong>
             <small>{auth.user.role}</small>

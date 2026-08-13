@@ -1,5 +1,6 @@
 import type { FormEvent } from 'react'
 import { PasswordToggleIcon } from './PasswordToggleIcon'
+import styles from './AuthScreen/AuthScreen.module.css'
 
 type AuthForm = { name: string; email: string; password: string }
 
@@ -24,22 +25,22 @@ export const AuthScreen = ({
   loading,
   onSubmit,
 }: Props) => (
-  <main className="auth-shell">
-    <section className="auth-panel">
+  <main className={styles.authShell}>
+    <section className={styles.authPanel}>
       <div>
-        <p className="eyebrow">Internal PMS</p>
+        <p className={styles.eyebrow}>Internal PMS</p>
         <h1>Project work, live on every screen.</h1>
-        <p className="lede">
+        <p className={styles.lede}>
           Sign in to manage projects, move tasks across the board, and watch updates arrive
           in real time for every project member.
         </p>
       </div>
 
-      <form className="form" onSubmit={onSubmit}>
-        <div className="segmented">
+      <form className={styles.form} onSubmit={onSubmit}>
+        <div className={styles.segmented}>
           <button
             type="button"
-            className={authMode === 'login' ? 'active' : ''}
+            className={authMode === 'login' ? styles.active : ''}
             onClick={() => {
   setAuthMode('login')
   setShowPassword(false)
@@ -50,7 +51,7 @@ export const AuthScreen = ({
           </button>
           <button
             type="button"
-            className={authMode === 'register' ? 'active' : ''}
+            className={authMode === 'register' ? styles.active : ''}
             onClick={() => {
   setAuthMode('register')
   setShowPassword(false)
@@ -89,7 +90,7 @@ export const AuthScreen = ({
 
         <label>
           Password
-          <span className="password-field">
+          <span className={styles.passwordField}>
             <input
               required
               minLength={6}
@@ -102,7 +103,7 @@ export const AuthScreen = ({
             />
             <button
               aria-label={showPassword ? 'Hide password' : 'Show password'}
-              className="password-toggle"
+              className={styles.passwordToggle}
               type="button"
               onClick={() => setShowPassword(!showPassword)}
             >

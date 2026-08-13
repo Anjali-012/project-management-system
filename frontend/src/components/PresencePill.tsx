@@ -1,4 +1,5 @@
 import type { PresenceUser } from '../types'
+import styles from './PresencePill/PresencePill.module.css'
 
 export const PresencePill = ({ users }: { users: PresenceUser[] }) => {
   if (users.length === 0) return null
@@ -6,13 +7,13 @@ export const PresencePill = ({ users }: { users: PresenceUser[] }) => {
   const rest = users.length - shown.length
 
   return (
-    <div className="presence" title={users.map((u) => u.name).join(', ')}>
+    <div className={styles.presence} title={users.map((u) => u.name).join(', ')}>
       {shown.map((u) => (
-        <span key={u.id} className="presence-avatar">
+        <span key={u.id} className={styles.presenceAvatar}>
           {u.name ? u.name[0].toUpperCase() : '?'}
         </span>
       ))}
-      {rest > 0 && <span className="presence-avatar presence-rest">+{rest}</span>}
+      {rest > 0 && <span className={`${styles.presenceAvatar} ${styles.presenceRest}`}>+{rest}</span>}
     </div>
   )
 }

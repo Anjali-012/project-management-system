@@ -1,6 +1,7 @@
 import { useCallback, useRef, useState, type FormEvent } from 'react'
 import type { Comment, Task } from '../types'
 import { formatDate } from '../utils/date'
+import styles from './CommentPanel/CommentPanel.module.css'
 
 type Props = {
   task: Task
@@ -28,19 +29,19 @@ export const CommentPanel = ({ task, onAddComment, onClose }: Props) => {
   }, [text, task._id, onAddComment])
 
   return (
-    <div className="comment-panel">
-      <div className="comment-panel-header">
+    <div className={styles.commentPanel}>
+      <div className={styles.commentPanelHeader}>
         <h3>{task.title}</h3>
         <button type="button" className="icon-button" onClick={onClose}>✕</button>
       </div>
 
-      <div className="comment-list">
+      <div className={styles.commentList}>
         {task.comments.length === 0
           ? <p className="empty">No comments yet.</p>
           : task.comments.map((c: Comment) => (
-            <article key={c._id} className="comment-item">
-              <div className="comment-meta">
-                <span className="comment-author">{c.user?.name ?? 'Member'}</span>
+            <article key={c._id} className={styles.commentItem}>
+              <div className={styles.commentMeta}>
+                <span className={styles.commentAuthor}>{c.user?.name ?? 'Member'}</span>
                 <small>{formatDate(c.createdAt)}</small>
               </div>
               <p>{c.text}</p>
@@ -49,7 +50,7 @@ export const CommentPanel = ({ task, onAddComment, onClose }: Props) => {
         }
       </div>
 
-      <form className="comment-form" onSubmit={handleSubmit}>
+      <form className={styles.commentForm} onSubmit={handleSubmit}>
         <textarea
           ref={inputRef}
           placeholder="Add a comment…"
