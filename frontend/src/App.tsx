@@ -18,6 +18,7 @@ import './App.css'
 
 function App() {
   const { toast, showToast } = useToast()
+
 const [activeSection, setActiveSection] = useState<WorkspaceSection>(() => {
   const savedSection = localStorage.getItem('pms-active-section')
 
@@ -78,8 +79,8 @@ const handleSectionChange = (section: WorkspaceSection) => {
   }
 
   const handleLogout = () => { workspace.logout(); logoutAuth() }
-  const openTasks = () => setActiveSection('tasks')
-  const openMembers = () => setActiveSection('members')
+  const openTasks = () => handleSectionChange('tasks')
+const openMembers = () => handleSectionChange('members')
 
   return (
     <main className="app-shell">
