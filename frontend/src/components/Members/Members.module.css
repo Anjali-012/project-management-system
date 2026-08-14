@@ -1,57 +1,83 @@
 .toolbar {
   display: flex;
   align-items: center;
-  gap: 10px;
-  margin-bottom: 20px;
+  gap: 12px;
+  margin-bottom: 22px;
   flex-wrap: wrap;
 }
 
 .projectSelect {
-  min-width: 180px;
+  flex: 1;
+  min-width: 220px;
+  height: 46px;
+  border: 1px solid #dfe5f0;
+  border-radius: 10px;
+  background: #fff;
+  color: #101936;
+  font-size: 14px;
+  font-weight: 600;
+  box-shadow: 0 8px 22px rgba(15, 22, 35, 0.025);
+}
+
+.projectSelect:focus {
+  border-color: #c7c2ff;
+  box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.08);
 }
 
 .spacer {
-  flex: 1;
+  display: none;
 }
 
 .inviteBtn {
+  width: auto !important;
+  min-width: 170px;
+  height: 46px;
+  padding: 0 20px;
   white-space: nowrap;
 }
 
-/* Member list */
+/* ─────────────────────────────────────────
+   MEMBER LIST
+   ───────────────────────────────────────── */
+
 .memberList {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 10px;
 }
 
 .memberRow {
+  min-height: 68px;
   display: flex;
   align-items: center;
   gap: 14px;
-  padding: 12px 16px;
-  background: var(--bg-white);
-  border: 1px solid var(--border-subtle);
-  border-radius: var(--r-lg);
-  transition: border-color 0.12s;
+  padding: 14px 18px;
+  background: rgba(255, 255, 255, 0.94);
+  border: 1px solid #dfe5f0;
+  border-radius: 12px;
+  box-shadow: 0 8px 24px rgba(15, 22, 35, 0.025);
+  transition:
+    border-color 0.14s ease,
+    box-shadow 0.14s ease,
+    transform 0.14s ease;
 }
 
 .memberRow:hover {
-  border-color: var(--border-default);
+  border-color: #cfd7e5;
+  box-shadow: 0 12px 28px rgba(15, 22, 35, 0.045);
 }
 
 .avatar {
-  width: 36px;
-  height: 36px;
+  width: 38px;
+  height: 38px;
+  flex: 0 0 38px;
+  display: grid;
+  place-items: center;
   border-radius: 50%;
-  background: var(--indigo-100, #e0e7ff);
-  color: var(--indigo-700, #4338ca);
+  background: #e8edff;
+  color: #4f46e5;
   font-size: 13px;
-  font-weight: 700;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
+  font-weight: 800;
 }
 
 .info {
@@ -60,70 +86,101 @@
 }
 
 .name {
+  color: #101936;
   font-size: 14px;
-  font-weight: 600;
-  color: var(--ink-900);
+  font-weight: 700;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
 .email {
+  margin-top: 2px;
+  color: #94a3b8;
   font-size: 12px;
-  color: var(--ink-400);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
+/* ─────────────────────────────────────────
+   ROLE
+   ───────────────────────────────────────── */
+
 .roleBadge {
+  flex: 0 0 auto;
+  padding: 5px 10px;
+  border-radius: 999px;
   font-size: 11px;
-  font-weight: 600;
-  padding: 2px 8px;
-  border-radius: 99px;
+  font-weight: 800;
   text-transform: capitalize;
-  letter-spacing: 0.02em;
-  flex-shrink: 0;
+  letter-spacing: 0.01em;
 }
 
-.roleOwner   { background: var(--amber-100, #fef3c7);  color: var(--amber-700, #b45309); }
-.roleManager { background: var(--indigo-100, #e0e7ff); color: var(--indigo-700, #4338ca); }
-.roleMember  { background: var(--green-100, #dcfce7);  color: var(--green-700, #15803d); }
-.roleViewer  { background: var(--bg-subtle);            color: var(--ink-400); }
+.roleOwner {
+  background: #fff3d6;
+  color: #b45309;
+}
+
+.roleManager {
+  background: #eeeaff;
+  color: #4f46e5;
+}
+
+.roleMember {
+  background: #e6f8f1;
+  color: #047857;
+}
+
+.roleViewer {
+  background: #f1f5f9;
+  color: #64748b;
+}
 
 .roleSelect {
+  width: auto !important;
+  min-width: 110px;
+  max-width: 140px;
+  height: 34px;
+  flex: 0 0 auto;
+  padding: 0 30px 0 10px;
+  border: 1px solid #dfe5f0;
+  border-radius: 8px;
+  background-color: #fff;
+  color: #334155;
   font-size: 12px;
-  padding: 4px 8px;
-  border-radius: var(--r-sm);
-  border: 1px solid var(--border-default);
-  background: var(--bg-subtle);
-  color: var(--ink-700);
-  cursor: pointer;
+  font-weight: 600;
 }
 
+/* ─────────────────────────────────────────
+   REMOVE
+   ───────────────────────────────────────── */
+
 .removeBtn {
-  width: 28px;
-  height: 28px;
-  background: transparent;
+  width: 30px;
+  height: 30px;
+  flex: 0 0 30px;
+  display: grid;
+  place-items: center;
   border: 1px solid transparent;
-  border-radius: var(--r-sm);
-  color: var(--ink-300);
+  border-radius: 8px;
+  background: transparent;
+  color: #cbd5e1;
+  font-size: 12px;
   cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 13px;
-  transition: all 0.12s;
-  flex-shrink: 0;
+  transition: all 0.14s ease;
 }
 
 .removeBtn:hover {
-  background: var(--rose-50, #fff1f2);
-  border-color: var(--rose-300, #fda4af);
-  color: var(--rose-500, #f43f5e);
+  background: #fff1f2;
+  border-color: #fecdd3;
+  color: #e11d48;
 }
 
-/* Invite modal form */
+/* ─────────────────────────────────────────
+   INVITE MODAL
+   ───────────────────────────────────────── */
+
 .form {
   display: flex;
   flex-direction: column;
@@ -137,9 +194,9 @@
 }
 
 .formRow label {
+  color: #475569;
   font-size: 13px;
-  font-weight: 600;
-  color: var(--ink-600);
+  font-weight: 700;
 }
 
 .submitBtn {
@@ -147,8 +204,42 @@
 }
 
 .empty {
-  color: var(--ink-400);
-  font-size: 14px;
-  padding: 24px 0;
+  min-height: 180px;
+  display: grid;
+  place-items: center;
+  color: #94a3b8;
+  font-size: 13px;
   text-align: center;
+}
+
+/* ─────────────────────────────────────────
+   RESPONSIVE
+   ───────────────────────────────────────── */
+
+@media (max-width: 700px) {
+  .toolbar {
+    align-items: stretch;
+  }
+
+  .projectSelect {
+    min-width: 0;
+    width: 100%;
+  }
+
+  .inviteBtn {
+    width: 100% !important;
+  }
+
+  .memberRow {
+    gap: 10px;
+    padding: 12px;
+  }
+
+  .email {
+    max-width: 180px;
+  }
+
+  .roleSelect {
+    min-width: 90px;
+  }
 }

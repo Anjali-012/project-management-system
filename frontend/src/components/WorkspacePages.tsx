@@ -1,19 +1,41 @@
 import { useEffect, useMemo, useState } from 'react'
 import type { FormEvent } from 'react'
 import { createApiClient } from '../api/client'
-import type { Activity, AuthState, Project, ProjectMember, ProjectRole, TaskFilters, TaskPriority, TaskStatus } from '../types'
+import type {
+  Activity,
+  AuthState,
+  Project,
+  ProjectMember,
+  ProjectRole,
+  TaskFilters,
+  TaskPriority,
+  TaskStatus,
+} from '../types'
 import { formatDate } from '../utils/date'
 import { getMemberId, getMemberName } from '../utils/member'
-import { STATUS_LABELS, STATUS_ORDER, PRIORITY_LABELS, PRIORITY_ORDER } from '../constants'
-import { getAssignableTaskMembers, getProjectCapabilities, type ProjectCapabilities } from '../utils/permissions'
+import {
+  STATUS_LABELS,
+  STATUS_ORDER,
+  PRIORITY_LABELS,
+  PRIORITY_ORDER,
+} from '../constants'
+import {
+  getAssignableTaskMembers,
+  getProjectCapabilities,
+  type ProjectCapabilities,
+} from '../utils/permissions'
 import { TaskBoard } from './TaskBoard'
 import { CreateTaskModal } from './CreateTaskModal'
 import { AddMemberModal } from './AddMemberModal'
 import type { TaskForm } from './TaskComposer'
 import taskStyles from './Tasks/Tasks.module.css'
 import memberStyles from './Members/Members.module.css'
+import { CreateProjectModal } from './CreateProjectModal'
 
-type ProjectForm = { title: string; description: string }
+type ProjectForm = {
+  title: string
+  description: string
+}
 
 type ProjectsPageProps = {
   projects: Project[]
@@ -33,59 +55,70 @@ export const ProjectsPage = ({
   onCreateProject,
   onSelectProject,
   canCreateProject,
-}: ProjectsPageProps) => (
-  <section className="section-page projects-page">
-    <div className="page-header">
-      <div>
-        <p className="section-kicker">Projects</p>
-        <h1>Manage and organize your projects.</h1>
-      </div>
-    </div>
+}: ProjectsPageProps) => {
+  const [createOpen, setCreateOpen] = useState(false)
 
-    {canCreateProject && <form className="project-create-card" onSubmit={onCreateProject}>
-      <div>
-        <h2>New Project</h2>
-        <p>Create a project using the existing workspace flow.</p>
-      </div>
-      <input
-        required
-        minLength={3}
-        maxLength={80}
-        pattern="[A-Za-z0-9][A-Za-z0-9 .,'()/_-]*"
-        placeholder="Project title"
-        value={projectForm.title}
-        onChange={(e) => setProjectForm({ ...projectForm, title: e.target.value })}
-      />
-      <textarea
-        maxLength={300}
-        placeholder="Description"
-        value={projectForm.description}
-        onChange={(e) => setProjectForm({ ...projectForm, description: e.target.value })}
-      />
-      <button type="submit">+ New Project</button>
-    </form>}
+  const handleCreateProject = (event: FormEvent) => {
+    onCreateProject(event)
+    setCreateOpen(false)
+  }
 
-    <div className="project-card-grid">
-      {projects.map((project, index) => (
-        <button
-          key={project._id}
-          type="button"
-          className={`project-card ${project._id === selectedProjectId ? 'selected' : ''}`}
-          onClick={() => onSelectProject(project._id)}
-        >
-          <span className={`project-dot project-dot-${index % 4}`}>
-            {project.title[0]?.toUpperCase() || 'P'}
-          </span>
-          <div>
-            <strong>{project.title}</strong>
-            <p>{project.description || 'No description yet.'}</p>
-            <small>{project.members.length} members</small>
-          </div>
-        </button>
-      ))}
-    </div>
-  </section>
-)
+  return (
+    <section className="section-page projects-page">
+      {/* ── Page header ── */}
+      <div className="page-header page-header-inline">
+        <div>
+          <p className="section-kicker">Projects</p>
+          <h1>Manage and organize your projects.</h1>
+        </div>
+
+        {canCreateProject && (
+          <button
+            type="button"
+            className="primary"
+            onClick={() => setCreateOpen(true)}
+          >
+            + New Project
+          </button>
+        )}
+      </div>
+
+      {/* ── Project list ── */}
+      <div className="project-card-grid">
+        {projects.map((project, index) => (
+          <button
+            key={project._id}
+            type="button"
+            className={`project-card ${
+              project._id === selectedProjectId ? 'selected' : ''
+            }`}
+            onClick={() => onSelectProject(project._id)}
+          >
+            <span className={`project-dot project-dot-${index % 4}`}>
+              {project.title[0]?.toUpperCase() || 'P'}
+            </span>
+
+            <div>
+              <strong>{project.title}</strong>
+              <p>{project.description || 'No description yet.'}</p>
+              <small>{project.members.length} members</small>
+            </div>
+          </button>
+        ))}
+      </div>
+
+      {/* ── Create project modal ── */}
+      {createOpen && canCreateProject && (
+       <CreateProjectModal
+  projectForm={projectForm}
+  setProjectForm={setProjectForm}
+  onCreateProject={handleCreateProject}
+  onClose={() => setCreateOpen(false)}
+/>
+      )}
+    </section>
+  )
+}
 
 type TasksPageProps = {
   projects: Project[]
@@ -116,7 +149,12 @@ type TasksPagePropsAssign = (task: Task, memberId: string) => void
 type TasksPagePropsStatus = (task: Task, status: TaskStatus) => void
 type TasksPagePropsTask = (task: Task) => void
 
-const EMPTY_FILTERS: TaskFilters = { search: '', status: '', priority: '', assignedTo: '' }
+const EMPTY_FILTERS: TaskFilters = {
+  search: '',
+  status: '',
+  priority: '',
+  assignedTo: '',
+}
 
 export const TasksPage = ({
   projects,
@@ -142,7 +180,12 @@ export const TasksPage = ({
   draggedTaskId,
 }: TasksPageProps) => {
   const [createOpen, setCreateOpen] = useState(false)
-  const hasActiveFilters = filters.search || filters.status || filters.priority || filters.assignedTo
+  const hasActiveFilters =
+    filters.search ||
+    filters.status ||
+    filters.priority ||
+    filters.assignedTo
+
   const { canCreateTask } = capabilities
 
   const handleCreate = (e: FormEvent) => {
@@ -162,8 +205,11 @@ export const TasksPage = ({
           aria-label="Select project"
         >
           {projects.length === 0 && <option value="">No projects</option>}
+
           {projects.map((p) => (
-            <option key={p._id} value={p._id}>{p.title}</option>
+            <option key={p._id} value={p._id}>
+              {p.title}
+            </option>
           ))}
         </select>
 
@@ -175,42 +221,74 @@ export const TasksPage = ({
               className={taskStyles.search}
               placeholder="Search tasks…"
               value={filters.search}
-              onChange={(e) => onFiltersChange({ ...filters, search: e.target.value })}
+              onChange={(e) =>
+                onFiltersChange({
+                  ...filters,
+                  search: e.target.value,
+                })
+              }
             />
 
             <select
               className={taskStyles.filterSelect}
               value={filters.status}
-              onChange={(e) => onFiltersChange({ ...filters, status: e.target.value as TaskStatus | '' })}
+              onChange={(e) =>
+                onFiltersChange({
+                  ...filters,
+                  status: e.target.value as TaskStatus | '',
+                })
+              }
               aria-label="Filter by status"
             >
               <option value="">All statuses</option>
+
               {STATUS_ORDER.map((s) => (
-                <option key={s} value={s}>{STATUS_LABELS[s]}</option>
+                <option key={s} value={s}>
+                  {STATUS_LABELS[s]}
+                </option>
               ))}
             </select>
 
             <select
               className={taskStyles.filterSelect}
               value={filters.priority}
-              onChange={(e) => onFiltersChange({ ...filters, priority: e.target.value as TaskPriority | '' })}
+              onChange={(e) =>
+                onFiltersChange({
+                  ...filters,
+                  priority: e.target.value as TaskPriority | '',
+                })
+              }
               aria-label="Filter by priority"
             >
               <option value="">All priorities</option>
+
               {PRIORITY_ORDER.map((p) => (
-                <option key={p} value={p}>{PRIORITY_LABELS[p]}</option>
+                <option key={p} value={p}>
+                  {PRIORITY_LABELS[p]}
+                </option>
               ))}
             </select>
 
             <select
               className={taskStyles.filterSelect}
               value={filters.assignedTo}
-              onChange={(e) => onFiltersChange({ ...filters, assignedTo: e.target.value })}
+              onChange={(e) =>
+                onFiltersChange({
+                  ...filters,
+                  assignedTo: e.target.value,
+                })
+              }
               aria-label="Filter by assignee"
             >
               <option value="">All members</option>
+
               {getAssignableTaskMembers(members).map((m) => (
-                <option key={getMemberId(m)} value={getMemberId(m)}>{getMemberName(m)}</option>
+                <option
+                  key={getMemberId(m)}
+                  value={getMemberId(m)}
+                >
+                  {getMemberName(m)}
+                </option>
               ))}
             </select>
 
@@ -292,10 +370,10 @@ type MembersPageProps = {
 }
 
 const ROLE_CLASS: Record<ProjectRole, string> = {
-  owner:   memberStyles.roleOwner,
+  owner: memberStyles.roleOwner,
   manager: memberStyles.roleManager,
-  member:  memberStyles.roleMember,
-  viewer:  memberStyles.roleViewer,
+  member: memberStyles.roleMember,
+  viewer: memberStyles.roleViewer,
 }
 
 export const MembersPage = ({
@@ -313,10 +391,19 @@ export const MembersPage = ({
   onRemoveMember,
 }: MembersPageProps) => {
   const [inviteOpen, setInviteOpen] = useState(false)
-  const selectedProject = projects.find((p) => p._id === selectedProjectId)
+  const selectedProject = projects.find(
+    (p) => p._id === selectedProjectId,
+  )
 
-  const currentUserMember = projectMembers.find((m) => m._id === auth.user.id)
-  const { canManageMembers, canAssignRoles, assignableRoles } = getProjectCapabilities(
+  const currentUserMember = projectMembers.find(
+    (m) => m._id === auth.user.id,
+  )
+
+  const {
+    canManageMembers,
+    canAssignRoles,
+    assignableRoles,
+  } = getProjectCapabilities(
     currentUserMember?.projectRole ?? null,
     auth.user.role,
   )
@@ -327,7 +414,10 @@ export const MembersPage = ({
   }
 
   useEffect(() => {
-    if (assignableRoles.length > 0 && !assignableRoles.includes(memberRole)) {
+    if (
+      assignableRoles.length > 0 &&
+      !assignableRoles.includes(memberRole)
+    ) {
       setMemberRole(assignableRoles[0])
     }
   }, [assignableRoles, memberRole, setMemberRole])
@@ -350,12 +440,19 @@ export const MembersPage = ({
           disabled={projects.length === 0}
           aria-label="Select project"
         >
-          {projects.length === 0 && <option value="">No projects</option>}
+          {projects.length === 0 && (
+            <option value="">No projects</option>
+          )}
+
           {projects.map((p) => (
-            <option key={p._id} value={p._id}>{p.title}</option>
+            <option key={p._id} value={p._id}>
+              {p.title}
+            </option>
           ))}
         </select>
+
         <div className={memberStyles.spacer} />
+
         {selectedProject && canManageMembers && (
           <button
             type="button"
@@ -374,19 +471,32 @@ export const MembersPage = ({
         ) : (
           <div className={memberStyles.memberList}>
             {projectMembers.map((m) => (
-              <div key={m._id} className={memberStyles.memberRow}>
+              <div
+                key={m._id}
+                className={memberStyles.memberRow}
+              >
                 <span className={memberStyles.avatar}>
                   {m.name[0]?.toUpperCase() || '?'}
                 </span>
 
                 <div className={memberStyles.info}>
-                  <div className={memberStyles.name}>{m.name}</div>
-                  <div className={memberStyles.email}>{m.email}</div>
+                  <div className={memberStyles.name}>
+                    {m.name}
+                  </div>
+
+                  <div className={memberStyles.email}>
+                    {m.email}
+                  </div>
                 </div>
 
-                {/* Role — managers and the actor's own role are immutable. */}
-                {m.projectRole === 'manager' || !canAssignRoles || m._id === auth.user.id ? (
-                  <span className={`${memberStyles.roleBadge} ${ROLE_CLASS[m.projectRole]}`}>
+                {m.projectRole === 'manager' ||
+                !canAssignRoles ||
+                m._id === auth.user.id ? (
+                  <span
+                    className={`${memberStyles.roleBadge} ${
+                      ROLE_CLASS[m.projectRole]
+                    }`}
+                  >
                     {m.projectRole}
                   </span>
                 ) : (
@@ -394,31 +504,41 @@ export const MembersPage = ({
                     className={memberStyles.roleSelect}
                     value={m.projectRole}
                     aria-label={`Role for ${m.name}`}
-                    onChange={(e) => onChangeMemberRole(m._id, e.target.value as ProjectRole)}
+                    onChange={(e) =>
+                      onChangeMemberRole(
+                        m._id,
+                        e.target.value as ProjectRole,
+                      )
+                    }
                   >
                     {assignableRoles.map((r) => (
-                      <option key={r} value={r}>{r}</option>
+                      <option key={r} value={r}>
+                        {r}
+                      </option>
                     ))}
                   </select>
                 )}
 
-                {/* Remove — project managers and the actor cannot be removed. */}
-                {m.projectRole !== 'manager' && canManageMembers && m._id !== auth.user.id && (
-                  <button
-                    type="button"
-                    className={memberStyles.removeBtn}
-                    aria-label={`Remove ${m.name}`}
-                    onClick={() => onRemoveMember(m._id)}
-                  >
-                    ✕
-                  </button>
-                )}
+                {m.projectRole !== 'manager' &&
+                  canManageMembers &&
+                  m._id !== auth.user.id && (
+                    <button
+                      type="button"
+                      className={memberStyles.removeBtn}
+                      aria-label={`Remove ${m.name}`}
+                      onClick={() => onRemoveMember(m._id)}
+                    >
+                      ✕
+                    </button>
+                  )}
               </div>
             ))}
           </div>
         )
       ) : (
-        <p className={memberStyles.empty}>Select a project to view members.</p>
+        <p className={memberStyles.empty}>
+          Select a project to view members.
+        </p>
       )}
 
       {/* ── Invite modal ── */}
@@ -442,25 +562,48 @@ type ActivityPageProps = {
   projects: Project[]
 }
 
-export const ActivityPage = ({ auth, projects }: ActivityPageProps) => {
-  const [projectFilter, setProjectFilter] = useState<string>('all')
+export const ActivityPage = ({
+  auth,
+  projects,
+}: ActivityPageProps) => {
+  const [projectFilter, setProjectFilter] =
+    useState<string>('all')
+
   const [activities, setActivities] = useState<Activity[]>([])
   const [loading, setLoading] = useState(false)
 
-  const { request } = useMemo(() => createApiClient(auth.token), [auth.token])
+  const { request } = useMemo(
+    () => createApiClient(auth.token),
+    [auth.token],
+  )
 
   useEffect(() => {
-    const url = projectFilter === 'all'
-      ? '/api/activity'
-      : `/api/activity/${projectFilter}`
+    const url =
+      projectFilter === 'all'
+        ? '/api/activity'
+        : `/api/activity/${projectFilter}`
+
     let cancelled = false
+
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setLoading(true)
+
     request<{ data: Activity[] }>(url)
-      .then((body) => { if (!cancelled) setActivities(body.data) })
+      .then((body) => {
+        if (!cancelled) {
+          setActivities(body.data)
+        }
+      })
       .catch(() => undefined)
-      .finally(() => { if (!cancelled) setLoading(false) })
-    return () => { cancelled = true }
+      .finally(() => {
+        if (!cancelled) {
+          setLoading(false)
+        }
+      })
+
+    return () => {
+      cancelled = true
+    }
   }, [projectFilter, request])
 
   return (
@@ -468,19 +611,29 @@ export const ActivityPage = ({ auth, projects }: ActivityPageProps) => {
       <div className="page-header page-header-inline">
         <div>
           <p className="section-kicker">Activity</p>
-          <h1>Track recent changes across your workspace.</h1>
+          <h1>
+            Track recent changes across your workspace.
+          </h1>
         </div>
+
         <label className="project-selector">
           <span>Project</span>
+
           <div className="project-selector-control">
             <i className="project-selector-dot" />
+
             <select
               value={projectFilter}
-              onChange={(e) => setProjectFilter(e.target.value)}
+              onChange={(e) =>
+                setProjectFilter(e.target.value)
+              }
             >
               <option value="all">All Projects</option>
+
               {projects.map((p) => (
-                <option key={p._id} value={p._id}>{p.title}</option>
+                <option key={p._id} value={p._id}>
+                  {p.title}
+                </option>
               ))}
             </select>
           </div>
@@ -494,11 +647,23 @@ export const ActivityPage = ({ auth, projects }: ActivityPageProps) => {
           <p className="empty">No activity yet.</p>
         ) : (
           activities.map((activity) => (
-            <article className="activity-row" key={activity._id}>
-              <span className="activity-icon">{activity.action[0]?.toUpperCase() || 'A'}</span>
+            <article
+              className="activity-row"
+              key={activity._id}
+            >
+              <span className="activity-icon">
+                {activity.action[0]?.toUpperCase() || 'A'}
+              </span>
+
               <div>
-                <strong>{activity.action.replaceAll('_', ' ')}</strong>
-                <small>{activity.user?.name || 'System'} - {formatDate(activity.createdAt)}</small>
+                <strong>
+                  {activity.action.replaceAll('_', ' ')}
+                </strong>
+
+                <small>
+                  {activity.user?.name || 'System'} -{' '}
+                  {formatDate(activity.createdAt)}
+                </small>
               </div>
             </article>
           ))
@@ -508,13 +673,20 @@ export const ActivityPage = ({ auth, projects }: ActivityPageProps) => {
   )
 }
 
-export const PlaceholderPage = ({ title }: { title: string }) => (
+export const PlaceholderPage = ({
+  title,
+}: {
+  title: string
+}) => (
   <section className="section-page">
     <div className="page-header">
       <div>
         <p className="section-kicker">{title}</p>
         <h1>{title}</h1>
-        <p>This section is ready for existing {title.toLowerCase()} functionality when available.</p>
+        <p>
+          This section is ready for existing{' '}
+          {title.toLowerCase()} functionality when available.
+        </p>
       </div>
     </div>
   </section>

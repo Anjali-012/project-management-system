@@ -1,0 +1,295 @@
+.overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  padding: 24px;
+
+  background: rgba(20, 24, 38, 0.46);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+}
+
+.modal {
+  position: relative;
+  width: min(100%, 540px);
+
+  background: #ffffff;
+  border: 1px solid rgba(91, 77, 172, 0.1);
+  border-radius: 16px;
+
+  padding: 32px;
+
+  box-shadow:
+    0 24px 70px rgba(28, 32, 52, 0.2),
+    0 8px 24px rgba(28, 32, 52, 0.08);
+
+  animation: modalIn 160ms ease-out;
+}
+
+@keyframes modalIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.985);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.closeButton {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+
+  width: 36px;
+  height: 36px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  border: 0;
+  border-radius: 9px;
+
+  background: transparent;
+  color: #71758a;
+
+  font-size: 25px;
+  font-weight: 400;
+  line-height: 1;
+
+  cursor: pointer;
+
+  transition:
+    background 140ms ease,
+    color 140ms ease;
+}
+
+.closeButton:hover {
+  background: #f3f2fa;
+  color: #292b3a;
+}
+
+.header {
+  padding-right: 44px;
+}
+
+.eyebrow {
+  margin: 0 0 7px;
+
+  color: #6858d8;
+
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  line-height: 1.4;
+}
+
+.header h2 {
+  margin: 0;
+
+  color: #202235;
+
+  font-size: 25px;
+  font-weight: 700;
+  line-height: 1.25;
+  letter-spacing: -0.02em;
+}
+
+.subtitle {
+  margin: 7px 0 0;
+
+  color: #74778a;
+
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+
+  margin-top: 26px;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+}
+
+.field + .field {
+  margin-top: 18px;
+}
+
+.field label {
+  margin-bottom: 8px;
+
+  color: #363849;
+
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+.field input,
+.field textarea {
+  width: 100%;
+  box-sizing: border-box;
+
+  border: 1px solid #dfe1e8;
+  border-radius: 9px;
+
+  background: #ffffff;
+  color: #292b3a;
+
+  font-family: inherit;
+  font-size: 14px;
+  line-height: 1.5;
+
+  outline: none;
+
+  transition:
+    border-color 140ms ease,
+    box-shadow 140ms ease,
+    background 140ms ease;
+}
+
+.field input {
+  height: 48px;
+  padding: 0 14px;
+}
+
+.field textarea {
+  min-height: 120px;
+  padding: 12px 14px;
+
+  resize: vertical;
+}
+
+.field input::placeholder,
+.field textarea::placeholder {
+  color: #a1a4b2;
+}
+
+.field input:hover,
+.field textarea:hover {
+  border-color: #c9cbd6;
+}
+
+.field input:focus,
+.field textarea:focus {
+  border-color: #7565dc;
+  background: #ffffff;
+
+  box-shadow: 0 0 0 3px rgba(117, 101, 220, 0.11);
+}
+
+.actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+
+  margin-top: 25px;
+}
+
+.cancelButton {
+  height: 48px;
+
+  padding: 0 18px;
+
+  border: 0;
+  border-radius: 9px;
+
+  background: transparent;
+  color: #6f7282;
+
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 600;
+
+  cursor: pointer;
+
+  transition:
+    background 140ms ease,
+    color 140ms ease;
+}
+
+.cancelButton:hover {
+  background: #f5f4f9;
+  color: #343646;
+}
+
+.createButton {
+  flex: 1;
+
+  height: 48px;
+
+  padding: 0 20px;
+
+  border: 0;
+  border-radius: 9px;
+
+  background: #6657d9;
+  color: #ffffff;
+
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 650;
+
+  cursor: pointer;
+
+  box-shadow: 0 5px 14px rgba(102, 87, 217, 0.18);
+
+  transition:
+    background 140ms ease,
+    transform 140ms ease,
+    box-shadow 140ms ease;
+}
+
+.createButton:hover {
+  background: #594acb;
+  box-shadow: 0 7px 18px rgba(102, 87, 217, 0.24);
+}
+
+.createButton:active {
+  transform: translateY(1px);
+}
+
+.createButton:focus-visible,
+.cancelButton:focus-visible,
+.closeButton:focus-visible {
+  outline: 2px solid #7565dc;
+  outline-offset: 2px;
+}
+
+@media (max-width: 600px) {
+  .overlay {
+    padding: 16px;
+  }
+
+  .modal {
+    padding: 26px 22px 22px;
+    border-radius: 14px;
+  }
+
+  .header h2 {
+    font-size: 22px;
+  }
+
+  .actions {
+    flex-direction: column-reverse;
+    align-items: stretch;
+  }
+
+  .cancelButton,
+  .createButton {
+    width: 100%;
+  }
+}
