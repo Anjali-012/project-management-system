@@ -18,7 +18,29 @@ import './App.css'
 
 function App() {
   const { toast, showToast } = useToast()
-  const [activeSection, setActiveSection] = useState<WorkspaceSection>('dashboard')
+const [activeSection, setActiveSection] = useState<WorkspaceSection>(() => {
+  const savedSection = localStorage.getItem('pms-active-section')
+
+  const validSections: WorkspaceSection[] = [
+    'dashboard',
+    'projects',
+    'tasks',
+    'members',
+    'calendar',
+    'activity',
+    'reports',
+    'settings',
+  ]
+
+  return savedSection && validSections.includes(savedSection as WorkspaceSection)
+    ? (savedSection as WorkspaceSection)
+    : 'dashboard'
+})
+
+const handleSectionChange = (section: WorkspaceSection) => {
+  setActiveSection(section)
+  localStorage.setItem('pms-active-section', section)
+}
 
   const {
     auth, authMode, setAuthMode, authForm, setAuthForm,
@@ -62,8 +84,8 @@ function App() {
   return (
     <main className="app-shell">
       <Sidebar
-        activeSection={activeSection}
-        onNavigate={setActiveSection}
+       activeSection={activeSection}
+  onNavigate={handleSectionChange}
       />
 
       <section className="workspace">
