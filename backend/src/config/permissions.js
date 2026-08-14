@@ -20,6 +20,7 @@ const PROJECT_PERMISSIONS = {
 
   manager: [
     "project:manage_members",
+    "project:assign_roles",
     "task:create",
     "task:edit_any",
     "task:delete_any",
@@ -71,7 +72,34 @@ const hasPermission = (membership, permission, globalRole) => {
   return allowed.includes(permission);
 };
 
+/**
+ * Roles that can be assigned via the API — owner is never assignable.
+ * Single source of truth; import this instead of redefining locally.
+ */
+const ASSIGNABLE_ROLES = ["manager", "member", "viewer"];
+
+/**
+ * Return the project roles the CURRENT ACTOR is allowed to assign.
+ *
+ * Pure function — no database access.
+ *
+ * @param {string} projectRole - Actor's project role ("owner"|"manager"|"member"|"viewer"|null)
+ * @param {string} globalRole  - Actor's global role from JWT ("admin"|"member")
+ * @returns {string[]}
+ */
+const getAssignableRoles = (projectRole, globalRole) => {
+  if (globalRole === "admin" || projectRole === "owner") {
+    return [...ASSIGNABLE_ROLES];
+  }
+  if (projectRole === "manager") {
+    return ASSIGNABLE_ROLES.filter((role) => role !== "manager");
+  }
+  return [];
+};
+
 module.exports = {
+  ASSIGNABLE_ROLES,
   PROJECT_PERMISSIONS,
+  getAssignableRoles,
   hasPermission,
 };

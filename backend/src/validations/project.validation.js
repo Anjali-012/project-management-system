@@ -1,6 +1,5 @@
 const { body, param } = require("express-validator");
-
-const ASSIGNABLE_ROLES = ["manager", "member", "viewer"];
+const { ASSIGNABLE_ROLES } = require("../config/permissions");
 
 const createProjectValidation = [
   body("title")

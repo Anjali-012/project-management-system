@@ -1,8 +1,9 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useAuth } from './hooks/useAuth'
 import { useToast } from './hooks/useToast'
 import { useWorkspace } from './hooks/useWorkspace'
 import { useTasksPage } from './hooks/useTasksPage'
+import { getProjectCapabilities, canEditTask } from './utils/permissions'
 
 import { AuthScreen } from './components/AuthScreen'
 import { CommentPanel } from './components/CommentPanel'
@@ -27,6 +28,17 @@ function App() {
   const workspace = useWorkspace(auth, showToast)
 
   const tasks = useTasksPage(auth, workspace.projects, workspace.socketRef, showToast)
+
+  // Load current user's project role whenever the tasks project changes
+  useEffect(() => {
+    if (auth) workspace.loadTaskProjectRole(tasks.taskProjectId)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tasks.taskProjectId, auth])
+
+  const taskCapabilities = getProjectCapabilities(
+    workspace.taskProjectRole,
+    auth?.user.role ?? 'member',
+  )
 
   if (!auth) {
     return (
@@ -101,7 +113,7 @@ function App() {
               onFiltersChange={tasks.setFilters}
               tasksByStatus={tasks.tasksByStatus}
               currentUserId={auth.user.id}
-              isAdmin={auth.user.role === 'admin'}
+              capabilities={taskCapabilities}
               onDragStart={tasks.setDraggedTaskId}
               onDrop={tasks.handleDrop}
               onAssign={tasks.assignTaskMember}
@@ -109,6 +121,7 @@ function App() {
               onEdit={tasks.openTaskEdit}
               onDelete={tasks.deleteTask}
               onOpenComments={tasks.setCommentTask}
+              draggedTaskId={tasks.draggedTaskId}
             />
           )}
 
@@ -138,7 +151,11 @@ function App() {
         </div>
       </section>
 
-      {tasks.editTask && tasks.taskProject && (
+      {tasks.editTask && tasks.taskProject && canEditTask(
+        taskCapabilities,
+        tasks.editTask.createdBy?.id || tasks.editTask.createdBy?._id || '',
+        auth.user.id,
+      ) && (
         <EditTaskModal
           editForm={tasks.editForm}
           setEditForm={tasks.setEditForm}
@@ -152,6 +169,11 @@ function App() {
         <div className="modal-backdrop" role="presentation" onClick={(e) => { if (e.target === e.currentTarget) tasks.setCommentTask(null) }}>
           <CommentPanel
             task={tasks.commentTask}
+            canComment={canEditTask(
+              taskCapabilities,
+              tasks.commentTask.createdBy?.id || tasks.commentTask.createdBy?._id || '',
+              auth.user.id,
+            )}
             onAddComment={tasks.addComment}
             onClose={() => tasks.setCommentTask(null)}
           />

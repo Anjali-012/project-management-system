@@ -1,9 +1,11 @@
 const Task = require("../models/task.model");
 const Project = require("../models/project.model");
+const ProjectMember = require("../models/projectMember.model");
 const User = require("../models/user.model");
 const ApiError = require("../utils/ApiError");
 const logActivity = require("../utils/logActivity");
 const notifyUser = require("../utils/notifyUser");
+const { hasPermission } = require("../config/permissions");
 
 const populateTask = (query) =>
   query
@@ -26,8 +28,46 @@ const ensureAssigneeIsMember = (project, assignedTo) => {
   }
 };
 
-const createTask = async ({ payload, userId, project }) => {
+const getMembership = (userId, projectId) =>
+  ProjectMember.findOne({ user: userId, project: projectId }).lean();
+
+const canModifyTask = (membership, globalRole, task, userId) => {
+  if (hasPermission(membership, "task:edit_any", globalRole)) {
+    return true;
+  }
+
+  if (
+    hasPermission(membership, "task:edit_own", globalRole) &&
+    task.createdBy.toString() === userId.toString()
+  ) {
+    return true;
+  }
+
+  return false;
+};
+
+const canRemoveTask = (membership, globalRole, task, userId) => {
+  if (hasPermission(membership, "task:delete_any", globalRole)) {
+    return true;
+  }
+
+  if (
+    hasPermission(membership, "task:delete_own", globalRole) &&
+    task.createdBy.toString() === userId.toString()
+  ) {
+    return true;
+  }
+
+  return false;
+};
+
+const createTask = async ({ payload, userId, project, userRole }) => {
   const { title, description, projectId, assignedTo, status, priority, dueDate } = payload;
+
+  const membership = await getMembership(userId, projectId);
+  if (!hasPermission(membership, "task:create", userRole)) {
+    throw new ApiError(403, "You do not have permission to create tasks");
+  }
 
   ensureAssigneeIsMember(project, assignedTo);
 
@@ -93,7 +133,12 @@ const getTasks = async ({
   };
 };
 
-const updateTask = async ({ task, payload, userId, project }) => {
+const updateTask = async ({ task, payload, userId, project, userRole }) => {
+  const membership = await getMembership(userId, task.project);
+  if (!canModifyTask(membership, userRole, task, userId)) {
+    throw new ApiError(403, "You do not have permission to update this task");
+  }
+
   ensureAssigneeIsMember(project, payload.assignedTo);
 
   const previousStatus = task.status;
@@ -127,10 +172,8 @@ const updateTask = async ({ task, payload, userId, project }) => {
 };
 
 const deleteTask = async ({ task, user }) => {
-  const isTaskCreator = task.createdBy.toString() === user.userId;
-  const isAdmin = user.role === "admin";
-
-  if (!isTaskCreator && !isAdmin) {
+  const membership = await getMembership(user.userId, task.project);
+  if (!canRemoveTask(membership, user.role, task, user.userId)) {
     throw new ApiError(403, "You are not allowed to delete this task");
   }
 
@@ -158,7 +201,12 @@ const findProjectForTask = async (task) => {
   return project;
 };
 
-const addComment = async ({ task, userId, text }) => {
+const addComment = async ({ task, userId, text, userRole }) => {
+  const membership = await getMembership(userId, task.project);
+  if (!canModifyTask(membership, userRole, task, userId)) {
+    throw new ApiError(403, "You do not have permission to comment on this task");
+  }
+
   task.comments.push({ user: userId, text });
   await task.save();
 
@@ -173,10 +221,12 @@ const addComment = async ({ task, userId, text }) => {
 };
 
 module.exports = {
+  addComment,
+  canModifyTask,
+  canRemoveTask,
   createTask,
   deleteTask,
   findProjectForTask,
   getTasks,
   updateTask,
-  addComment,
 };

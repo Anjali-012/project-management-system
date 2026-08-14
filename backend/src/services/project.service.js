@@ -3,11 +3,11 @@ const ProjectMember = require("../models/projectMember.model");
 const User = require("../models/user.model");
 const ApiError = require("../utils/ApiError");
 const createNotification = require("../utils/createNotification");
-
-// Roles that can be assigned via the API — owner is never assignable
-const ASSIGNABLE_ROLES = ["manager", "member", "viewer"];
+const { ASSIGNABLE_ROLES, hasPermission, getAssignableRoles } = require("../config/permissions");
 
 const createProject = async ({ title, description, userId }) => {
+  // Global authorization: any authenticated user may create a project.
+  // Project-level roles do not gate creation; the creator becomes owner.
   const project = await Project.create({
     title,
     description,
@@ -65,19 +65,13 @@ const addMember = async ({ projectId, email, role = "member", actor }) => {
     project: projectId,
   }).lean();
 
-  const isAdmin = actor.role === "admin";
-  const canManage =
-    isAdmin ||
-    (actorMembership && ["owner", "manager"].includes(actorMembership.role));
+  if (!hasPermission(actorMembership, "project:manage_members", actor.role)) {
+    throw new ApiError(403, "Not authorized to add members");
+  }
 
-  if (!canManage) throw new ApiError(403, "Not authorized to add members");
-
-  // Only owner/admin may assign non-member roles
-  const canAssignRoles =
-    isAdmin || (actorMembership && actorMembership.role === "owner");
-
-  if (role !== "member" && !canAssignRoles) {
-    throw new ApiError(403, "Not authorized to assign roles");
+  const allowed = getAssignableRoles(actorMembership?.role ?? null, actor.role);
+  if (!allowed.includes(role)) {
+    throw new ApiError(403, `Not authorized to assign role: ${role}`);
   }
 
   const user = await User.findOne({ email });
@@ -127,6 +121,24 @@ const changeMemberRole = async ({ projectId, targetUserId, role, actor }) => {
   );
   if (!isMember) throw new ApiError(404, "User is not a member of this project");
 
+  const actorMembership = await ProjectMember.findOne({
+    user: actor.userId,
+    project: projectId,
+  }).lean();
+
+  if (!hasPermission(actorMembership, "project:assign_roles", actor.role)) {
+    throw new ApiError(403, "Not authorized to change member roles");
+  }
+
+  if (actor.role !== "admin" && targetUserId === actor.userId) {
+    throw new ApiError(403, "You cannot change your own project role");
+  }
+
+  const allowed = getAssignableRoles(actorMembership?.role ?? null, actor.role);
+  if (!allowed.includes(role)) {
+    throw new ApiError(403, `Not authorized to assign role: ${role}`);
+  }
+
   const targetPM = await ProjectMember.findOne({
     user: targetUserId,
     project: projectId,
@@ -151,6 +163,19 @@ const changeMemberRole = async ({ projectId, targetUserId, role, actor }) => {
 const removeMember = async ({ projectId, targetUserId, actor }) => {
   const project = await Project.findById(projectId);
   if (!project) throw new ApiError(404, "Project not found");
+
+  const actorMembership = await ProjectMember.findOne({
+    user: actor.userId,
+    project: projectId,
+  }).lean();
+
+  if (!hasPermission(actorMembership, "project:manage_members", actor.role)) {
+    throw new ApiError(403, "Not authorized to remove members");
+  }
+
+  if (actor.role !== "admin" && targetUserId === actor.userId) {
+    throw new ApiError(403, "You cannot remove yourself from the project");
+  }
 
   const isMember = project.members.some(
     (id) => id.toString() === targetUserId,

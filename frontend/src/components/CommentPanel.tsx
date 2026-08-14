@@ -5,11 +5,12 @@ import styles from './CommentPanel/CommentPanel.module.css'
 
 type Props = {
   task: Task
+  canComment: boolean
   onAddComment: (taskId: string, text: string) => Promise<void>
   onClose: () => void
 }
 
-export const CommentPanel = ({ task, onAddComment, onClose }: Props) => {
+export const CommentPanel = ({ task, canComment, onAddComment, onClose }: Props) => {
   const [text, setText] = useState('')
   const [loading, setLoading] = useState(false)
   const inputRef = useRef<HTMLTextAreaElement>(null)
@@ -50,6 +51,7 @@ export const CommentPanel = ({ task, onAddComment, onClose }: Props) => {
         }
       </div>
 
+      {canComment && (
       <form className={styles.commentForm} onSubmit={handleSubmit}>
         <textarea
           ref={inputRef}
@@ -63,6 +65,7 @@ export const CommentPanel = ({ task, onAddComment, onClose }: Props) => {
           {loading ? '…' : 'Post'}
         </button>
       </form>
+      )}
     </div>
   )
 }

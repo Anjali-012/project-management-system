@@ -5,6 +5,7 @@ import type { Activity, AuthState, Member, Project, ProjectMember, ProjectRole, 
 import { formatDate } from '../utils/date'
 import { getMemberId, getMemberName } from '../utils/member'
 import { STATUS_LABELS, STATUS_ORDER, PRIORITY_LABELS, PRIORITY_ORDER } from '../constants'
+import { getProjectCapabilities, type ProjectCapabilities } from '../utils/permissions'
 import { TaskBoard } from './TaskBoard'
 import { CreateTaskModal } from './CreateTaskModal'
 import { AddMemberModal } from './AddMemberModal'
@@ -97,7 +98,7 @@ type TasksPageProps = {
   onFiltersChange: (filters: TaskFilters) => void
   tasksByStatus: Record<TaskStatus, import('../types').Task[]>
   currentUserId: string
-  isAdmin: boolean
+  capabilities: ProjectCapabilities
   onDragStart: (id: string) => void
   onDrop: (status: TaskStatus) => void
   onAssign: TasksPagePropsAssign
@@ -105,6 +106,7 @@ type TasksPageProps = {
   onEdit: TasksPagePropsTask
   onDelete: TasksPagePropsTask
   onOpenComments: TasksPagePropsTask
+  draggedTaskId: string
 }
 
 type Task = import('../types').Task
@@ -127,7 +129,7 @@ export const TasksPage = ({
   onFiltersChange,
   tasksByStatus,
   currentUserId,
-  isAdmin,
+  capabilities,
   onDragStart,
   onDrop,
   onAssign,
@@ -135,9 +137,11 @@ export const TasksPage = ({
   onEdit,
   onDelete,
   onOpenComments,
+  draggedTaskId,
 }: TasksPageProps) => {
   const [createOpen, setCreateOpen] = useState(false)
   const hasActiveFilters = filters.search || filters.status || filters.priority || filters.assignedTo
+  const { canCreateTask } = capabilities
 
   const handleCreate = (e: FormEvent) => {
     onCreateTask(e)
@@ -222,7 +226,7 @@ export const TasksPage = ({
 
         <div className={taskStyles.spacer} />
 
-        {selectedProject && (
+        {selectedProject && canCreateTask && (
           <button
             type="button"
             className={taskStyles.createBtn}
@@ -239,7 +243,8 @@ export const TasksPage = ({
           tasksByStatus={tasksByStatus}
           members={members}
           currentUserId={currentUserId}
-          isAdmin={isAdmin}
+          capabilities={capabilities}
+          draggedTaskId={draggedTaskId}
           onDragStart={onDragStart}
           onDrop={onDrop}
           onAssign={onAssign}
@@ -256,7 +261,7 @@ export const TasksPage = ({
       )}
 
       {/* ── Create task modal ── */}
-      {createOpen && (
+      {createOpen && canCreateTask && (
         <CreateTaskModal
           taskForm={taskForm}
           setTaskForm={setTaskForm}
@@ -291,8 +296,6 @@ const ROLE_CLASS: Record<ProjectRole, string> = {
   viewer:  memberStyles.roleViewer,
 }
 
-const ASSIGNABLE_ROLES: ProjectRole[] = ['manager', 'member', 'viewer']
-
 export const MembersPage = ({
   auth,
   projects,
@@ -310,17 +313,22 @@ export const MembersPage = ({
   const [inviteOpen, setInviteOpen] = useState(false)
   const selectedProject = projects.find((p) => p._id === selectedProjectId)
 
-  const currentUserMember = projectMembers.find(
-    (m) => m._id === auth.user.id,
+  const currentUserMember = projectMembers.find((m) => m._id === auth.user.id)
+  const { canManageMembers, canAssignRoles, assignableRoles } = getProjectCapabilities(
+    currentUserMember?.projectRole ?? null,
+    auth.user.role,
   )
-  const isAdmin = auth.user.role === 'admin'
-  const canManage = isAdmin || (currentUserMember?.projectRole === 'owner') || (currentUserMember?.projectRole === 'manager')
-  const canAssignRoles = isAdmin || currentUserMember?.projectRole === 'owner'
 
   const handleInvite = (e: FormEvent) => {
     onAddMember(e)
     setInviteOpen(false)
   }
+
+  useEffect(() => {
+    if (assignableRoles.length > 0 && !assignableRoles.includes(memberRole)) {
+      setMemberRole(assignableRoles[0])
+    }
+  }, [assignableRoles, memberRole, setMemberRole])
 
   return (
     <section className="section-page members-page">
@@ -346,7 +354,7 @@ export const MembersPage = ({
           ))}
         </select>
         <div className={memberStyles.spacer} />
-        {selectedProject && canManage && (
+        {selectedProject && canManageMembers && (
           <button
             type="button"
             className={`primary ${memberStyles.inviteBtn}`}
@@ -374,8 +382,8 @@ export const MembersPage = ({
                   <div className={memberStyles.email}>{m.email}</div>
                 </div>
 
-                {/* Role — editable for non-owners if actor has assign_roles */}
-                {m.projectRole === 'owner' || !canAssignRoles ? (
+                {/* Role — editable for non-owners if actor has assign_roles and target is not self */}
+                {m.projectRole === 'owner' || !canAssignRoles || m._id === auth.user.id ? (
                   <span className={`${memberStyles.roleBadge} ${ROLE_CLASS[m.projectRole]}`}>
                     {m.projectRole}
                   </span>
@@ -386,14 +394,14 @@ export const MembersPage = ({
                     aria-label={`Role for ${m.name}`}
                     onChange={(e) => onChangeMemberRole(m._id, e.target.value as ProjectRole)}
                   >
-                    {ASSIGNABLE_ROLES.map((r) => (
+                    {assignableRoles.map((r) => (
                       <option key={r} value={r}>{r}</option>
                     ))}
                   </select>
                 )}
 
-                {/* Remove — only for non-owners, only if actor can manage */}
-                {m.projectRole !== 'owner' && canManage && (
+                {/* Remove — only for non-owners, only if actor can manage, not self */}
+                {m.projectRole !== 'owner' && canManageMembers && m._id !== auth.user.id && (
                   <button
                     type="button"
                     className={memberStyles.removeBtn}
@@ -412,10 +420,11 @@ export const MembersPage = ({
       )}
 
       {/* ── Invite modal ── */}
-      {inviteOpen && (
+      {inviteOpen && canManageMembers && (
         <AddMemberModal
           email={memberEmail}
           role={memberRole}
+          assignableRoles={assignableRoles}
           onEmailChange={setMemberEmail}
           onRoleChange={setMemberRole}
           onSubmit={handleInvite}

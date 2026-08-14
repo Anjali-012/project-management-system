@@ -1,8 +1,9 @@
 import { useEffect, useMemo, useState } from 'react'
 import { createApiClient } from '../api/client'
-import type { Activity, AuthState, Notification, Project, Task } from '../types'
+import type { Activity, AuthState, Notification, Project, ProjectMember, ProjectRole, Task } from '../types'
 import { formatDate } from '../utils/date'
 import { getMemberName } from '../utils/member'
+import { getProjectCapabilities } from '../utils/permissions'
 import { PresencePill } from './PresencePill'
 
 type Props = {
@@ -24,6 +25,7 @@ export const DashboardOverview = ({
   const [tasks, setTasks] = useState<Task[]>([])
   const [activities, setActivities] = useState<Activity[]>([])
   const [loading, setLoading] = useState(false)
+  const [scopedProjectRole, setScopedProjectRole] = useState<ProjectRole | null>(null)
 
   const { request } = useMemo(() => createApiClient(auth.token), [auth.token])
 
@@ -44,6 +46,32 @@ export const DashboardOverview = ({
       .finally(() => { if (!cancelled) setLoading(false) })
     return () => { cancelled = true }
   }, [projectFilter, request])
+
+  useEffect(() => {
+    if (projectFilter === 'all') {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setScopedProjectRole(null)
+      return
+    }
+
+    let cancelled = false
+    request<{ data: ProjectMember[] }>(`/api/projects/${projectFilter}/members`)
+      .then((body) => {
+        if (cancelled) return
+        const me = body.data.find((member) => member._id === auth.user.id)
+        setScopedProjectRole(me?.projectRole ?? null)
+      })
+      .catch(() => {
+        if (!cancelled) setScopedProjectRole(null)
+      })
+
+    return () => { cancelled = true }
+  }, [auth.user.id, projectFilter, request])
+
+  const scopedCapabilities = getProjectCapabilities(
+    projectFilter === 'all' ? null : scopedProjectRole,
+    auth.user.role,
+  )
 
   const [renderedAt] = useState(() => Date.now())
   const dueSoonCount = tasks.filter((task) => {
@@ -66,6 +94,9 @@ export const DashboardOverview = ({
   const heroDesc = projectFilter === 'all'
     ? 'Showing combined data across all your projects.'
     : (selectedProject?.description || 'No description yet.')
+
+  const showCreateTask = projectFilter !== 'all' && scopedCapabilities.canCreateTask
+  const showInviteMember = projectFilter !== 'all' && scopedCapabilities.canManageMembers
 
   return (
     <section className="dashboard-overview">
@@ -117,13 +148,17 @@ export const DashboardOverview = ({
               </select>
             </div>
           </label>
-          <button type="button" className="quick-primary" onClick={onOpenTasks}>
-            <span>+</span>
-            Create New Task
-          </button>
-          <button type="button" className="quick-secondary" onClick={onOpenMembers}>
-            Invite Member
-          </button>
+          {showCreateTask && (
+            <button type="button" className="quick-primary" onClick={onOpenTasks}>
+              <span>+</span>
+              Create New Task
+            </button>
+          )}
+          {showInviteMember && (
+            <button type="button" className="quick-secondary" onClick={onOpenMembers}>
+              Invite Member
+            </button>
+          )}
         </aside>
       </div>
 

@@ -1,5 +1,7 @@
 import { memo } from 'react'
 import type { Member, Task, TaskStatus } from '../types'
+import type { ProjectCapabilities } from '../utils/permissions'
+import { canDeleteTask, canEditTask } from '../utils/permissions'
 import { getAssignedUserId, getMemberId, getMemberName } from '../utils/member'
 import { STATUS_LABELS, STATUS_ORDER } from '../constants'
 import { DueDateBadge } from './DueDateBadge'
@@ -10,7 +12,7 @@ type Props = {
   task: Task
   members: Array<Member | string>
   currentUserId: string
-  isAdmin: boolean
+  capabilities: ProjectCapabilities
   onDragStart: (id: string) => void
   onAssign: (task: Task, memberId: string) => void
   onStatusChange: (task: Task, status: TaskStatus) => void
@@ -20,15 +22,20 @@ type Props = {
 }
 
 export const TaskCard = memo(({
-  task, members, currentUserId, isAdmin,
+  task, members, currentUserId, capabilities,
   onDragStart, onAssign, onStatusChange, onEdit, onDelete, onOpenComments,
 }: Props) => {
   const creatorId = task.createdBy?.id || task.createdBy?._id || ''
-  const canDelete = isAdmin || creatorId === currentUserId
+  const editable = canEditTask(capabilities, creatorId, currentUserId)
+  const deletable = canDeleteTask(capabilities, creatorId, currentUserId)
   const assignedName = task.assignedTo?.name || 'Unassigned'
 
   return (
-    <article className={styles.taskCard} draggable onDragStart={() => onDragStart(task._id)}>
+    <article
+      className={styles.taskCard}
+      draggable={editable}
+      onDragStart={() => editable && onDragStart(task._id)}
+    >
       <div className={styles.taskCardTop}>
         <PriorityBadge priority={task.priority ?? 'medium'} />
         {task.dueDate && <DueDateBadge dueDate={task.dueDate} />}
@@ -45,35 +52,41 @@ export const TaskCard = memo(({
         <strong>{assignedName}</strong>
       </div>
 
-      <div className={styles.taskCardControls}>
-        <label className={styles.inlineField}>
-          Task member
-          <select value={getAssignedUserId(task.assignedTo)} onChange={(e) => onAssign(task, e.target.value)}>
-            <option value="">Unassigned</option>
-            {members.map((member) => (
-              <option key={getMemberId(member)} value={getMemberId(member)}>
-                {getMemberName(member)}
-              </option>
-            ))}
-          </select>
-        </label>
+      {editable && (
+        <div className={styles.taskCardControls}>
+          <label className={styles.inlineField}>
+            Task member
+            <select value={getAssignedUserId(task.assignedTo)} onChange={(e) => onAssign(task, e.target.value)}>
+              <option value="">Unassigned</option>
+              {members.map((member) => (
+                <option key={getMemberId(member)} value={getMemberId(member)}>
+                  {getMemberName(member)}
+                </option>
+              ))}
+            </select>
+          </label>
 
-        <label className={styles.inlineField}>
-          Status
-          <select value={task.status} onChange={(e) => onStatusChange(task, e.target.value as TaskStatus)}>
-            {STATUS_ORDER.map((option) => (
-              <option key={option} value={option}>{STATUS_LABELS[option]}</option>
-            ))}
-          </select>
-        </label>
-      </div>
+          <label className={styles.inlineField}>
+            Status
+            <select value={task.status} onChange={(e) => onStatusChange(task, e.target.value as TaskStatus)}>
+              {STATUS_ORDER.map((option) => (
+                <option key={option} value={option}>{STATUS_LABELS[option]}</option>
+              ))}
+            </select>
+          </label>
+        </div>
+      )}
 
-      <div className={`${styles.taskActions} ${canDelete ? '' : styles.taskActionsNoDelete}`}>
-        <button type="button" onClick={() => onEdit(task)}>Edit Task</button>
-        <button type="button" className={styles.btnComments} onClick={() => onOpenComments(task)}>
-          ◌ {task.comments?.length ?? 0}
-        </button>
-        {canDelete && (
+      <div className={`${styles.taskActions} ${deletable ? '' : styles.taskActionsNoDelete}`}>
+        {editable && (
+          <button type="button" onClick={() => onEdit(task)}>Edit Task</button>
+        )}
+        {editable && (
+          <button type="button" className={styles.btnComments} onClick={() => onOpenComments(task)}>
+            ◌ {task.comments?.length ?? 0}
+          </button>
+        )}
+        {deletable && (
           <button type="button" onClick={() => onDelete(task)} aria-label={`Delete ${task.title}`}>⋮</button>
         )}
       </div>

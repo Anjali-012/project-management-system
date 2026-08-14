@@ -7,6 +7,7 @@ const createTask = asyncHandler(async (req, res) => {
     payload: req.body,
     userId: req.user.userId,
     project: req.project,
+    userRole: req.user.role,
   });
   emitToProject(task.project._id || task.project, "task:created", task);
   res.status(201).json({ success: true, message: "Task created successfully", data: task });
@@ -20,6 +21,7 @@ const getTasks = asyncHandler(async (req, res) => {
 const updateTask = asyncHandler(async (req, res) => {
   const updatedTask = await taskService.updateTask({
     task: req.task, payload: req.body, userId: req.user.userId, project: req.project,
+    userRole: req.user.role,
   });
   emitToProject(updatedTask.project._id || updatedTask.project, "task:updated", updatedTask);
   res.status(200).json({ success: true, message: "Task updated successfully", data: updatedTask });
@@ -36,6 +38,7 @@ const addComment = asyncHandler(async (req, res) => {
     task: req.task,
     userId: req.user.userId,
     text: req.body.text,
+    userRole: req.user.role,
   });
   emitToProject(task.project._id || task.project, "task:updated", task);
   res.status(201).json({ success: true, message: "Comment added", data: task });

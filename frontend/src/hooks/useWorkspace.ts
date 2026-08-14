@@ -30,6 +30,7 @@ export const useWorkspace = (
   const [memberEmail, setMemberEmail] = useState('')
   const [memberRole, setMemberRole] = useState<ProjectRole>('member')
   const [projectMembers, setProjectMembers] = useState<ProjectMember[]>([])
+  const [taskProjectRole, setTaskProjectRole] = useState<ProjectRole | null>(null)
   const [projectForm, setProjectForm] = useState({ title: '', description: '' })
   const socketRef = useRef<Socket | null>(null)
   const [socketConnected, setSocketConnected] = useState(false)
@@ -193,6 +194,17 @@ export const useWorkspace = (
     return () => { cancelled = true }
   }, [selectedProjectId, request])
 
+  const loadTaskProjectRole = useCallback(async (projectId: string) => {
+    if (!projectId || !auth) { setTaskProjectRole(null); return }
+    try {
+      const body = await request<{ data: ProjectMember[] }>(`/api/projects/${projectId}/members`)
+      const me = body.data.find((m) => m._id === auth.user.id)
+      setTaskProjectRole(me?.projectRole ?? null)
+    } catch {
+      setTaskProjectRole(null)
+    }
+  }, [auth, request])
+
   const markNotificationsRead = useCallback(async () => {
     try {
       await request('/api/notifications/read-all', { method: 'PATCH' })
@@ -223,5 +235,6 @@ export const useWorkspace = (
     socketRef,
     createProject, addMember, changeMemberRole, removeMember,
     markNotificationsRead, logout,
+    loadTaskProjectRole, taskProjectRole,
   }
 }
