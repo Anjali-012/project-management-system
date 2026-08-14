@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import type { FormEvent } from 'react'
-import { createApiClient } from '../api/client'
+import { createApiClient } from '../../api/client'
 import type {
   Activity,
   AuthState,
@@ -10,27 +10,27 @@ import type {
   TaskFilters,
   TaskPriority,
   TaskStatus,
-} from '../types'
-import { formatDate } from '../utils/date'
-import { getMemberId, getMemberName } from '../utils/member'
+} from '../../types'
+import { formatDate } from '../../utils/date'
+import { getMemberId, getMemberName } from '../../utils/member'
 import {
   STATUS_LABELS,
   STATUS_ORDER,
   PRIORITY_LABELS,
   PRIORITY_ORDER,
-} from '../constants'
+} from '../../constants'
 import {
   getAssignableTaskMembers,
   getProjectCapabilities,
   type ProjectCapabilities,
-} from '../utils/permissions'
-import { TaskBoard } from './TaskBoard/TaskBoard'
-import { CreateTaskModal } from './CreateTaskModal'
-import { AddMemberModal } from './Members/AddMemberModal'
-import type { TaskFormValues } from './TaskForm/TaskForm'
-import taskStyles from './Tasks/Tasks.module.css'
-import memberStyles from './Members/Members.module.css'
-import { CreateProjectModal } from './CreateProjectModal/CreateProjectModal'
+} from '../../utils/permissions'
+import { TaskBoard } from '../TaskBoard/TaskBoard'
+import { CreateTaskModal } from '../CreateTaskModal/CreateTaskModal'
+import { AddMemberModal } from '../Members/AddMemberModal'
+import type { TaskFormValues } from '../TaskForm/TaskForm'
+import taskStyles from '../Tasks/Tasks.module.css'
+import memberStyles from '../Members/Members.module.css'
+import { CreateProjectModal } from '../CreateProjectModal/CreateProjectModal'
 
 type ProjectForm = {
   title: string
@@ -131,7 +131,7 @@ setTaskForm: (form: TaskFormValues) => void
   onCreateTask: (event: FormEvent) => void
   filters: TaskFilters
   onFiltersChange: (filters: TaskFilters) => void
-  tasksByStatus: Record<TaskStatus, import('../types').Task[]>
+  tasksByStatus: Record<TaskStatus, import('../../types').Task[]>
   currentUserId: string
   capabilities: ProjectCapabilities
   onDragStart: (id: string) => void
@@ -144,7 +144,7 @@ setTaskForm: (form: TaskFormValues) => void
   draggedTaskId: string
 }
 
-type Task = import('../types').Task
+type Task = import('../../types').Task
 type TasksPagePropsAssign = (task: Task, memberId: string) => void
 type TasksPagePropsStatus = (task: Task, status: TaskStatus) => void
 type TasksPagePropsTask = (task: Task) => void

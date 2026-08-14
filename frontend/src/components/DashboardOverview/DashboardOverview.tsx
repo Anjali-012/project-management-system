@@ -1,10 +1,10 @@
 import { useEffect, useMemo, useState } from 'react'
-import { createApiClient } from '../api/client'
-import type { Activity, AuthState, Notification, Project, ProjectMember, ProjectRole, Task } from '../types'
-import { formatDate } from '../utils/date'
-import { getMemberName } from '../utils/member'
-import { getProjectCapabilities } from '../utils/permissions'
-import { PresencePill } from './PresencePill/PresencePill'
+import { createApiClient } from '../../api/client'
+import type { Activity, AuthState, Notification, Project, ProjectMember, ProjectRole, Task } from '../../types'
+import { formatDate } from '../../utils/date'
+import { getMemberName } from '../../utils/member'
+import { getProjectCapabilities } from '../../utils/permissions'
+import { PresencePill } from '../PresencePill/PresencePill'
 
 type Props = {
   auth: AuthState

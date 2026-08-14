@@ -1,5 +1,5 @@
 import type { FormEvent } from 'react'
-import { PasswordToggleIcon } from '../PasswordToggleIcon'
+import { PasswordToggleIcon } from '../PasswordToggleIcon/PasswordToggleIcon'
 import styles from './AuthScreen.module.css'
 
 type AuthForm = { name: string; email: string; password: string }

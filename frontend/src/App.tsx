@@ -7,12 +7,12 @@ import { getGlobalCapabilities, getProjectCapabilities, canEditTask } from './ut
 
 import { AuthScreen } from './components/AuthScreen/AuthScreen'
 import { CommentPanel } from './components/CommentPanel/CommentPanel'
-import { DashboardOverview } from './components/DashboardOverview'
+import { DashboardOverview } from './components/DashboardOverview/DashboardOverview'
 import { EditTaskModal } from './components/EditTaskModal/EditTaskModal'
 import { Sidebar, type WorkspaceSection } from './components/Sidebar/Sidebar'
 import { ToastMessage } from './components/ToastMessage/ToastMessage'
 import { Topbar } from './components/Topbar/Topbar'
-import { ActivityPage, MembersPage, PlaceholderPage, ProjectsPage, TasksPage } from './components/WorkspacePages'
+import { ActivityPage, MembersPage, PlaceholderPage, ProjectsPage, TasksPage } from './components/WorkspacePages/WorkspacePages'
 
 import './App.css'
 

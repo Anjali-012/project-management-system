@@ -1,8 +1,8 @@
 import type { FormEvent } from 'react'
-import type { ProjectMember } from '../types'
-import { Modal } from './Modal/Modal'
-import { TaskForm } from './TaskForm/TaskForm'
-import type { TaskForm as TaskFormValues } from '././TaskComposer/TaskComposer'
+import type { ProjectMember } from '../../types'
+import { Modal } from '../Modal/Modal'
+import { TaskForm } from '../TaskForm/TaskForm'
+import type { TaskForm as TaskFormValues } from '../TaskComposer/TaskComposer'
 
 type Props = {
   taskForm: TaskFormValues
