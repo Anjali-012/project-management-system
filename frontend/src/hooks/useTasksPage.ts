@@ -226,6 +226,7 @@ export const useTasksPage = (
       setTasks((current) => current.filter((t) => t._id !== task._id))
     } catch (err) {
       showToast(err instanceof Error ? err.message : 'Could not delete task')
+      throw err
     }
   }
 

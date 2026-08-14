@@ -76,16 +76,18 @@
 }
 
 .commentForm {
-  display: flex;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
   gap: 8px;
-  align-items: flex-start;
+  align-items: end;
   padding: 12px 14px 16px;
   border-top: 1px solid var(--border-subtle);
   flex-shrink: 0;
 }
 
 .commentForm textarea {
-  flex: 1;
+  width: 100%;
+  min-width: 0;
   font-size: 13px;
   min-height: 96px;
   resize: vertical;
@@ -93,7 +95,18 @@
 
 .commentForm button.primary {
   width: auto;
+  min-width: 72px;
   padding: 9px 18px;
   flex-shrink: 0;
   align-self: flex-end;
+}
+
+@media (max-width: 480px) {
+  .commentForm {
+    grid-template-columns: 1fr;
+  }
+
+  .commentForm button.primary {
+    width: 100%;
+  }
 }
