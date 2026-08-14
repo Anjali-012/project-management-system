@@ -1,5 +1,5 @@
 import type { DragEvent } from 'react'
-import type { Member, Task, TaskStatus } from '../types'
+import type { ProjectMember, Task, TaskStatus } from '../types'
 import { STATUS_ORDER, STATUS_LABELS } from '../constants'
 import type { ProjectCapabilities } from '../utils/permissions'
 import { canEditTask } from '../utils/permissions'
@@ -8,7 +8,7 @@ import styles from './TaskBoard/TaskBoard.module.css'
 
 type Props = {
   tasksByStatus: Record<TaskStatus, Task[]>
-  members: Array<Member | string>
+  members: ProjectMember[]
   currentUserId: string
   capabilities: ProjectCapabilities
   draggedTaskId: string

@@ -1,4 +1,14 @@
-import type { ProjectRole } from '../types'
+import type { ProjectMember, ProjectRole } from '../types'
+
+export type GlobalCapabilities = {
+  canCreateProject: boolean
+}
+
+export const getGlobalCapabilities = (
+  globalRole: 'admin' | 'manager' | 'member',
+): GlobalCapabilities => ({
+  canCreateProject: globalRole === 'admin' || globalRole === 'manager',
+})
 
 export type ProjectCapabilities = {
   canCreateTask: boolean
@@ -34,7 +44,7 @@ const adminCapabilities: ProjectCapabilities = {
  */
 export const getProjectCapabilities = (
   projectRole: ProjectRole | null | undefined,
-  globalRole: 'admin' | 'member',
+  globalRole: 'admin' | 'manager' | 'member',
 ): ProjectCapabilities => {
   if (globalRole === 'admin') {
     return adminCapabilities
@@ -42,16 +52,6 @@ export const getProjectCapabilities = (
 
   switch (projectRole) {
     case 'owner':
-      return {
-        canCreateTask: true,
-        canManageMembers: true,
-        canAssignRoles: true,
-        assignableRoles: ['manager', 'member', 'viewer'],
-        canEditAnyTask: true,
-        canEditOwnTask: true,
-        canDeleteAnyTask: true,
-        canDeleteOwnTask: true,
-      }
     case 'manager':
       return {
         canCreateTask: true,
@@ -69,7 +69,7 @@ export const getProjectCapabilities = (
         canManageMembers: false,
         canAssignRoles: false,
         assignableRoles: [],
-        canEditAnyTask: false,
+        canEditAnyTask: true,
         canEditOwnTask: true,
         canDeleteAnyTask: false,
         canDeleteOwnTask: true,
@@ -104,3 +104,7 @@ export const canDeleteTask = (
 ) =>
   capabilities.canDeleteAnyTask ||
   (capabilities.canDeleteOwnTask && taskCreatorId === currentUserId)
+
+/** Mirrors the backend's task-assignee eligibility check for dropdown UX. */
+export const getAssignableTaskMembers = (members: ProjectMember[]) =>
+  members.filter((member) => member.globalRole !== 'admin' && member.projectRole !== 'manager')

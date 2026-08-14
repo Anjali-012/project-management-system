@@ -7,12 +7,13 @@ const createProject = asyncHandler(async (req, res) => {
     title,
     description,
     userId: req.user.userId,
+    globalRole: req.user.role,
   });
   res.status(201).json({ success: true, message: "Project created successfully", data: project });
 });
 
 const getProjects = asyncHandler(async (req, res) => {
-  const projects = await projectService.getProjectsForUser(req.user.userId);
+  const projects = await projectService.getProjectsForUser(req.user.userId, req.user.role);
   res.status(200).json({ success: true, count: projects.length, data: projects });
 });
 

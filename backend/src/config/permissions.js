@@ -8,7 +8,6 @@
 
 const PROJECT_PERMISSIONS = {
   owner: [
-    "project:delete",
     "project:manage_members",
     "project:assign_roles",
     "task:create",
@@ -30,6 +29,7 @@ const PROJECT_PERMISSIONS = {
 
   member: [
     "task:create",
+    "task:edit_any",
     "task:edit_own",
     "task:delete_own",
     "task:assign",
@@ -48,7 +48,7 @@ const PROJECT_PERMISSIONS = {
  *
  * @param {object|null} membership  - ProjectMember document (or null if not a member)
  * @param {string}      permission  - Permission string to check (e.g. "task:create")
- * @param {string}      globalRole  - User's global role from JWT ("admin" | "member")
+ * @param {string}      globalRole  - User's global role from JWT
  * @returns {boolean}
  */
 const hasPermission = (membership, permission, globalRole) => {
@@ -73,7 +73,7 @@ const hasPermission = (membership, permission, globalRole) => {
 };
 
 /**
- * Roles that can be assigned via the API — owner is never assignable.
+ * Project roles that can be assigned via the API.
  * Single source of truth; import this instead of redefining locally.
  */
 const ASSIGNABLE_ROLES = ["manager", "member", "viewer"];
@@ -83,12 +83,12 @@ const ASSIGNABLE_ROLES = ["manager", "member", "viewer"];
  *
  * Pure function — no database access.
  *
- * @param {string} projectRole - Actor's project role ("owner"|"manager"|"member"|"viewer"|null)
- * @param {string} globalRole  - Actor's global role from JWT ("admin"|"member")
+ * @param {string} projectRole - Actor's project role ("manager"|"member"|"viewer"|null)
+ * @param {string} globalRole  - Actor's global role from JWT
  * @returns {string[]}
  */
 const getAssignableRoles = (projectRole, globalRole) => {
-  if (globalRole === "admin" || projectRole === "owner") {
+  if (globalRole === "admin") {
     return [...ASSIGNABLE_ROLES];
   }
   if (projectRole === "manager") {
@@ -97,9 +97,25 @@ const getAssignableRoles = (projectRole, globalRole) => {
   return [];
 };
 
+const canCreateProject = (globalRole) =>
+  globalRole === "admin" || globalRole === "manager";
+
+/**
+ * Task assignees are limited to non-manager, non-admin project members.
+ * The membership must include its populated user when this is used.
+ */
+const isAssignableTaskMember = (membership) =>
+  Boolean(
+    membership &&
+    membership.role !== "manager" &&
+    membership.user?.role !== "admin",
+  );
+
 module.exports = {
   ASSIGNABLE_ROLES,
+  canCreateProject,
   PROJECT_PERMISSIONS,
   getAssignableRoles,
   hasPermission,
+  isAssignableTaskMember,
 };

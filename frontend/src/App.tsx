@@ -1,9 +1,9 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { useAuth } from './hooks/useAuth'
 import { useToast } from './hooks/useToast'
 import { useWorkspace } from './hooks/useWorkspace'
 import { useTasksPage } from './hooks/useTasksPage'
-import { getProjectCapabilities, canEditTask } from './utils/permissions'
+import { getGlobalCapabilities, getProjectCapabilities, canEditTask } from './utils/permissions'
 
 import { AuthScreen } from './components/AuthScreen'
 import { CommentPanel } from './components/CommentPanel'
@@ -29,16 +29,17 @@ function App() {
 
   const tasks = useTasksPage(auth, workspace.projects, workspace.socketRef, showToast)
 
-  // Load current user's project role whenever the tasks project changes
-  useEffect(() => {
-    if (auth) workspace.loadTaskProjectRole(tasks.taskProjectId)
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [tasks.taskProjectId, auth])
+  const taskProjectRole = tasks.taskProjectMembers.find(
+    (member) => member._id === auth?.user.id,
+  )?.projectRole ?? null
 
   const taskCapabilities = getProjectCapabilities(
-    workspace.taskProjectRole,
+    taskProjectRole,
     auth?.user.role ?? 'member',
   )
+  const globalCapabilities = auth
+    ? getGlobalCapabilities(auth.user.role)
+    : { canCreateProject: false }
 
   if (!auth) {
     return (
@@ -96,6 +97,7 @@ function App() {
               setProjectForm={workspace.setProjectForm}
               onCreateProject={workspace.createProject}
               onSelectProject={workspace.setSelectedProjectId}
+              canCreateProject={globalCapabilities.canCreateProject}
             />
           )}
 

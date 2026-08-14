@@ -8,12 +8,12 @@
  *   A. Members in Project.members missing from ProjectMember
  *   B. ProjectMember records not present in Project.members (orphans)
  *   C. Duplicate ProjectMember records for the same user
- *   D. No ProjectMember with role "owner"
+ *   D. No ProjectMember with role "manager"
  *   E. ProjectMember records referencing a non-existent user
  *   F. ProjectMember records referencing a non-existent project
  *   G. Project.members entries referencing a non-existent user
- *   H. createdBy does not have a ProjectMember with role "owner"
- *   I. Multiple ProjectMember records with role "owner"
+ *   H. createdBy does not have a ProjectMember with role "manager"
+ *   I. Multiple ProjectMember records with role "manager"
  *
  * Usage:
  *   node src/scripts/auditProjectMembers.js
@@ -60,12 +60,12 @@ const run = async () => {
     missingPM: [],          // A
     orphanPM: [],           // B
     duplicatePM: [],        // C
-    noOwner: [],            // D
+    noManager: [],          // D
     invalidUserInPM: [],    // E
     invalidProjectInPM: [], // F
     invalidUserInLegacy: [], // G
-    createdByNotOwner: [],  // H
-    multipleOwners: [],     // I
+    createdByNotManager: [], // H
+    multipleManagers: [],   // I
   };
 
   // ── F: ProjectMember records pointing to a non-existent project ───────────
@@ -148,30 +148,30 @@ const run = async () => {
       }
     }
 
-    // D: No owner in ProjectMember
-    const owners = pmRecords.filter((pm) => pm.role === "owner");
-    if (owners.length === 0) {
-      issues.noOwner.push({ projectId: pid, projectTitle: project.title });
+    // D: No project manager in ProjectMember
+    const managers = pmRecords.filter((pm) => pm.role === "manager");
+    if (managers.length === 0) {
+      issues.noManager.push({ projectId: pid, projectTitle: project.title });
       projectsRequiringAction.add(pid);
     }
 
-    // I: Multiple owners
-    if (owners.length > 1) {
-      issues.multipleOwners.push({
+    // I: Multiple project managers
+    if (managers.length > 1) {
+      issues.multipleManagers.push({
         projectId: pid,
         projectTitle: project.title,
-        ownerUserIds: owners.map((o) => o.user.toString()),
+        managerUserIds: managers.map((manager) => manager.user.toString()),
       });
       projectsRequiringAction.add(pid);
     }
 
-    // H: createdBy does not have role "owner" in ProjectMember
+    // H: createdBy does not have role "manager" in ProjectMember
     if (project.createdBy) {
       const creatorId = project.createdBy.toString();
       const creatorRecords = pmByUser.get(creatorId) || [];
-      const creatorIsOwner = creatorRecords.some((pm) => pm.role === "owner");
-      if (!creatorIsOwner) {
-        issues.createdByNotOwner.push({
+      const creatorIsManager = creatorRecords.some((pm) => pm.role === "manager");
+      if (!creatorIsManager) {
+        issues.createdByNotManager.push({
           projectId: pid,
           projectTitle: project.title,
           createdBy: creatorId,
@@ -214,10 +214,10 @@ const run = async () => {
       console.log(`  Project ${i.projectId} → user ${i.userId} (${i.count} records: ${i.pmIds.join(", ")})`);
   }
 
-  console.log("\n── D. Projects with no ProjectMember owner ───────");
-  console.log(`  Count: ${issues.noOwner.length}`);
-  if (issues.noOwner.length) {
-    for (const i of issues.noOwner)
+  console.log("\n── D. Projects with no ProjectMember manager ─────");
+  console.log(`  Count: ${issues.noManager.length}`);
+  if (issues.noManager.length) {
+    for (const i of issues.noManager)
       console.log(`  Project "${i.projectTitle}" (${i.projectId})`);
   }
 
@@ -242,10 +242,10 @@ const run = async () => {
       console.log(`  Project ${i.projectId} → missing user ${i.userId}`);
   }
 
-  console.log("\n── H. createdBy not owner in ProjectMember ───────");
-  console.log(`  Count: ${issues.createdByNotOwner.length}`);
-  if (issues.createdByNotOwner.length) {
-    for (const i of issues.createdByNotOwner)
+  console.log("\n── H. createdBy not manager in ProjectMember ─────");
+  console.log(`  Count: ${issues.createdByNotManager.length}`);
+  if (issues.createdByNotManager.length) {
+    for (const i of issues.createdByNotManager)
       console.log(
         `  Project "${i.projectTitle}" (${i.projectId}) → createdBy ${i.createdBy}` +
         (i.creatorPMRoles.length
@@ -254,11 +254,11 @@ const run = async () => {
       );
   }
 
-  console.log("\n── I. Projects with multiple owners ──────────────");
-  console.log(`  Count: ${issues.multipleOwners.length}`);
-  if (issues.multipleOwners.length) {
-    for (const i of issues.multipleOwners)
-      console.log(`  Project "${i.projectTitle}" (${i.projectId}) → owners: ${i.ownerUserIds.join(", ")}`);
+  console.log("\n── I. Projects with multiple managers ────────────");
+  console.log(`  Count: ${issues.multipleManagers.length}`);
+  if (issues.multipleManagers.length) {
+    for (const i of issues.multipleManagers)
+      console.log(`  Project "${i.projectTitle}" (${i.projectId}) → managers: ${i.managerUserIds.join(", ")}`);
   }
 
   console.log("\n══════════════════════════════════════════════════");

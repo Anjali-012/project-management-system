@@ -59,7 +59,7 @@ export const CommentPanel = ({ task, canComment, onAddComment, onClose }: Props)
           maxLength={1000}
           value={text}
           onChange={(e) => setText(e.target.value)}
-          rows={2}
+          rows={4}
         />
         <button className="primary" type="submit" disabled={loading || !text.trim()}>
           {loading ? '…' : 'Post'}

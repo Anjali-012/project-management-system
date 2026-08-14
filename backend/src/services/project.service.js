@@ -3,11 +3,14 @@ const ProjectMember = require("../models/projectMember.model");
 const User = require("../models/user.model");
 const ApiError = require("../utils/ApiError");
 const createNotification = require("../utils/createNotification");
-const { ASSIGNABLE_ROLES, hasPermission, getAssignableRoles } = require("../config/permissions");
+const { ASSIGNABLE_ROLES, canCreateProject, hasPermission, getAssignableRoles } = require("../config/permissions");
 
-const createProject = async ({ title, description, userId }) => {
-  // Global authorization: any authenticated user may create a project.
-  // Project-level roles do not gate creation; the creator becomes owner.
+const createProject = async ({ title, description, userId, globalRole }) => {
+  if (!canCreateProject(globalRole)) {
+    throw new ApiError(403, "You do not have permission to create projects");
+  }
+
+  // The global creator becomes the project's manager.
   const project = await Project.create({
     title,
     description,
@@ -16,18 +19,22 @@ const createProject = async ({ title, description, userId }) => {
   });
 
   try {
-    await ProjectMember.create({ user: userId, project: project._id, role: "owner" });
+    await ProjectMember.create({ user: userId, project: project._id, role: "manager" });
   } catch (err) {
     if (err.code !== 11000) {
-      console.error("[RBAC] ProjectMember owner sync failed", err.message);
+      console.error("[RBAC] ProjectMember manager sync failed", err.message);
     }
   }
 
   return project;
 };
 
-const getProjectsForUser = async (userId) => {
-  return Project.find({ members: userId })
+const getProjectsForUser = async (userId, globalRole) => {
+  const projectIds = globalRole === "admin"
+    ? undefined
+    : (await ProjectMember.find({ user: userId }).distinct("project"));
+
+  return Project.find(projectIds ? { _id: { $in: projectIds } } : {})
     .populate("createdBy", "name email role")
     .populate("members", "name email role")
     .sort({ updatedAt: -1 });
@@ -77,14 +84,17 @@ const addMember = async ({ projectId, email, role = "member", actor }) => {
   const user = await User.findOne({ email });
   if (!user) throw new ApiError(404, "User not found");
 
-  const isAlreadyMember = project.members.some(
-    (id) => id.toString() === user._id.toString(),
-  );
-  if (isAlreadyMember) throw new ApiError(400, "User already a project member");
+  const existingMembership = await ProjectMember.exists({
+    user: user._id,
+    project: project._id,
+  });
+  if (existingMembership) throw new ApiError(400, "User already a project member");
 
-  // Write Project.members first (existing auth gate)
-  project.members.push(user._id);
-  await project.save();
+  // Keep the legacy denormalized list in sync for existing consumers.
+  if (!project.members.some((id) => id.toString() === user._id.toString())) {
+    project.members.push(user._id);
+    await project.save();
+  }
 
   // Sync ProjectMember
   try {
@@ -106,7 +116,7 @@ const addMember = async ({ projectId, email, role = "member", actor }) => {
 
 /**
  * Change an existing member's project role.
- * Owner role is protected — cannot be assigned or removed via this endpoint.
+ * Project managers are protected from demotion.
  */
 const changeMemberRole = async ({ projectId, targetUserId, role, actor }) => {
   if (!ASSIGNABLE_ROLES.includes(role)) {
@@ -115,11 +125,6 @@ const changeMemberRole = async ({ projectId, targetUserId, role, actor }) => {
 
   const project = await Project.findById(projectId);
   if (!project) throw new ApiError(404, "Project not found");
-
-  const isMember = project.members.some(
-    (id) => id.toString() === targetUserId,
-  );
-  if (!isMember) throw new ApiError(404, "User is not a member of this project");
 
   const actorMembership = await ProjectMember.findOne({
     user: actor.userId,
@@ -130,7 +135,7 @@ const changeMemberRole = async ({ projectId, targetUserId, role, actor }) => {
     throw new ApiError(403, "Not authorized to change member roles");
   }
 
-  if (actor.role !== "admin" && targetUserId === actor.userId) {
+  if (targetUserId === actor.userId) {
     throw new ApiError(403, "You cannot change your own project role");
   }
 
@@ -145,9 +150,8 @@ const changeMemberRole = async ({ projectId, targetUserId, role, actor }) => {
   });
   if (!targetPM) throw new ApiError(404, "Membership record not found");
 
-  // Owner is immutable through this endpoint
-  if (targetPM.role === "owner") {
-    throw new ApiError(403, "Cannot change the project owner's role");
+  if (targetPM.role === "manager") {
+    throw new ApiError(403, "Cannot change a project manager's role");
   }
 
   targetPM.role = role;
@@ -158,7 +162,7 @@ const changeMemberRole = async ({ projectId, targetUserId, role, actor }) => {
 
 /**
  * Remove a member from a project.
- * Owner cannot be removed.
+ * Project managers cannot be removed.
  */
 const removeMember = async ({ projectId, targetUserId, actor }) => {
   const project = await Project.findById(projectId);
@@ -173,22 +177,17 @@ const removeMember = async ({ projectId, targetUserId, actor }) => {
     throw new ApiError(403, "Not authorized to remove members");
   }
 
-  if (actor.role !== "admin" && targetUserId === actor.userId) {
+  if (targetUserId === actor.userId) {
     throw new ApiError(403, "You cannot remove yourself from the project");
   }
-
-  const isMember = project.members.some(
-    (id) => id.toString() === targetUserId,
-  );
-  if (!isMember) throw new ApiError(404, "User is not a member of this project");
 
   const targetPM = await ProjectMember.findOne({
     user: targetUserId,
     project: projectId,
   });
 
-  if (targetPM?.role === "owner") {
-    throw new ApiError(403, "Cannot remove the project owner");
+  if (targetPM?.role === "manager") {
+    throw new ApiError(403, "Cannot remove a project manager");
   }
 
   // Remove from flat array

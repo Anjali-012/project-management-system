@@ -1,5 +1,5 @@
 import type { FormEvent } from 'react'
-import type { Member, TaskPriority, TaskStatus } from '../types'
+import type { ProjectMember, TaskPriority, TaskStatus } from '../types'
 import { Modal } from './Modal/Modal'
 import { TaskForm, type TaskFormValues } from './TaskForm/TaskForm'
 
@@ -15,7 +15,7 @@ export type EditForm = {
 type Props = {
   editForm: EditForm
   setEditForm: (form: EditForm) => void
-  members: Array<Member | string>
+  members: ProjectMember[]
   onSave: (e: FormEvent) => void
   onClose: () => void
 }

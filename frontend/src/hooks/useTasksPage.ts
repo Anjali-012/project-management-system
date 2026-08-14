@@ -6,6 +6,7 @@ import { ALPHA_NUMERIC_TEXT_PATTERN, STATUS_ORDER } from '../constants'
 import type {
   AuthState,
   Project,
+  ProjectMember,
   Task,
   TaskFilters,
   TaskStatus,
@@ -26,6 +27,7 @@ export const useTasksPage = (
 ) => {
   const [taskProjectId, setTaskProjectIdRaw] = useState('')
   const [tasks, setTasks] = useState<Task[]>([])
+  const [taskProjectMembers, setTaskProjectMembers] = useState<ProjectMember[]>([])
   const [loading, setLoading] = useState(false)
   const [taskForm, setTaskForm] = useState<TaskForm>({
     title: '', description: '', assignedTo: '', priority: 'medium', dueDate: '',
@@ -42,8 +44,6 @@ export const useTasksPage = (
   const { request } = useMemo(() => createApiClient(auth?.token), [auth?.token])
 
   const taskProject = projects.find((p) => p._id === taskProjectId)
-  const taskProjectMembers = taskProject?.members ?? []
-
   // ── Initialise to first project once projects load ─────────────────────────
 
   useEffect(() => {
@@ -118,6 +118,18 @@ export const useTasksPage = (
       .finally(() => { if (!cancelled) setLoading(false) })
     return () => { cancelled = true }
   }, [auth, taskProjectId, request, showToast])
+
+  // ProjectMember is the canonical source of project roles and assignee eligibility.
+  useEffect(() => {
+    if (!auth || !taskProjectId) {
+      return
+    }
+    let cancelled = false
+    request<{ data: ProjectMember[] }>(`/api/projects/${taskProjectId}/members`)
+      .then((body) => { if (!cancelled) setTaskProjectMembers(body.data) })
+      .catch(() => { if (!cancelled) setTaskProjectMembers([]) })
+    return () => { cancelled = true }
+  }, [auth, taskProjectId, request])
 
   // ── Validation ─────────────────────────────────────────────────────────────
 

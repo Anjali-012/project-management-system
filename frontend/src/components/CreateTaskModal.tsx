@@ -1,5 +1,5 @@
 import type { FormEvent } from 'react'
-import type { Member } from '../types'
+import type { ProjectMember } from '../types'
 import { Modal } from './Modal/Modal'
 import { TaskForm } from './TaskForm/TaskForm'
 import type { TaskForm as TaskFormValues } from './TaskComposer'
@@ -7,7 +7,7 @@ import type { TaskForm as TaskFormValues } from './TaskComposer'
 type Props = {
   taskForm: TaskFormValues
   setTaskForm: (form: TaskFormValues) => void
-  members: Array<Member | string>
+  members: ProjectMember[]
   onCreateTask: (e: FormEvent) => void
   onClose: () => void
 }

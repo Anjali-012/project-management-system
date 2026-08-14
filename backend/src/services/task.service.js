@@ -5,7 +5,7 @@ const User = require("../models/user.model");
 const ApiError = require("../utils/ApiError");
 const logActivity = require("../utils/logActivity");
 const notifyUser = require("../utils/notifyUser");
-const { hasPermission } = require("../config/permissions");
+const { hasPermission, isAssignableTaskMember } = require("../config/permissions");
 
 const populateTask = (query) =>
   query
@@ -14,17 +14,18 @@ const populateTask = (query) =>
     .populate("comments.user", "name email")
     .populate("project", "title");
 
-const ensureAssigneeIsMember = (project, assignedTo) => {
+const ensureAssigneeIsMember = async (projectId, assignedTo) => {
   if (!assignedTo) {
     return;
   }
 
-  const isMember = project.members.some(
-    (memberId) => memberId.toString() === assignedTo.toString(),
-  );
+  const assigneeMembership = await ProjectMember.findOne({
+    user: assignedTo,
+    project: projectId,
+  }).populate("user", "role").lean();
 
-  if (!isMember) {
-    throw new ApiError(400, "Assigned user must be a project member");
+  if (!isAssignableTaskMember(assigneeMembership)) {
+    throw new ApiError(400, "Assigned user must be an assignable project member");
   }
 };
 
@@ -69,7 +70,7 @@ const createTask = async ({ payload, userId, project, userRole }) => {
     throw new ApiError(403, "You do not have permission to create tasks");
   }
 
-  ensureAssigneeIsMember(project, assignedTo);
+  await ensureAssigneeIsMember(projectId, assignedTo);
 
   const task = await Task.create({
     title, description, status, priority,
@@ -139,7 +140,7 @@ const updateTask = async ({ task, payload, userId, project, userRole }) => {
     throw new ApiError(403, "You do not have permission to update this task");
   }
 
-  ensureAssigneeIsMember(project, payload.assignedTo);
+  await ensureAssigneeIsMember(task.project, payload.assignedTo);
 
   const previousStatus = task.status;
   const updatedTask = await populateTask(

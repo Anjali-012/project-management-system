@@ -10,7 +10,7 @@ const {
   removeProjectMember,
 } = require("../controllers/project.controller");
 
-const { protect } = require("../middlewares/auth.middleware");
+const { protect, authorizeRoles } = require("../middlewares/auth.middleware");
 const isProjectMember = require("../middlewares/projectMember.middleware");
 const requireProjectPermission = require("../middlewares/requireProjectPermission.middleware");
 const validate = require("../middlewares/validation.middleware");
@@ -22,7 +22,7 @@ const {
   removeMemberValidation,
 } = require("../validations/project.validation");
 
-router.post("/", protect, createProjectValidation, validate, createProject);
+router.post("/", protect, authorizeRoles("admin", "manager"), createProjectValidation, validate, createProject);
 router.get("/", protect, getProjects);
 
 // Member management — all require project membership + specific permission

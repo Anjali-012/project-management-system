@@ -39,7 +39,7 @@ const run = async () => {
 
     if (!project.createdBy) {
       console.warn(
-        `  [REVIEW] Project "${project.title}" (${project._id}) has no createdBy — cannot assign owner. Manual review required.`,
+        `  [REVIEW] Project "${project.title}" (${project._id}) has no createdBy — cannot assign manager. Manual review required.`,
       );
       needsReview++;
     }
@@ -68,7 +68,7 @@ const run = async () => {
         project.createdBy &&
         memberId.toString() === project.createdBy.toString();
 
-      const role = isCreator ? "owner" : "member";
+      const role = isCreator ? "manager" : "member";
 
       try {
         await ProjectMember.create({

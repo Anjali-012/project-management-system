@@ -1,6 +1,7 @@
 import type { FormEvent } from 'react'
-import type { Member, TaskPriority, TaskStatus } from '../../types'
+import type { ProjectMember, TaskPriority, TaskStatus } from '../../types'
 import { getMemberId, getMemberName } from '../../utils/member'
+import { getAssignableTaskMembers } from '../../utils/permissions'
 import { STATUS_ORDER, STATUS_LABELS, PRIORITY_ORDER, PRIORITY_LABELS } from '../../constants'
 import styles from './TaskForm.module.css'
 
@@ -16,7 +17,7 @@ export type TaskFormValues = {
 type Props = {
   values: TaskFormValues
   onChange: (values: TaskFormValues) => void
-  members: Array<Member | string>
+  members: ProjectMember[]
   showStatus?: boolean
   submitLabel: string
   onSubmit: (e: FormEvent) => void
@@ -70,7 +71,7 @@ export const TaskForm = ({ values, onChange, members, showStatus = false, submit
         Assignee
         <select value={values.assignedTo} onChange={(e) => set({ assignedTo: e.target.value })}>
           <option value="">Unassigned</option>
-          {members.map((member) => (
+          {getAssignableTaskMembers(members).map((member) => (
             <option key={getMemberId(member)} value={getMemberId(member)}>
               {getMemberName(member)}
             </option>

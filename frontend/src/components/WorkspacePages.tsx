@@ -1,11 +1,11 @@
 import { useEffect, useMemo, useState } from 'react'
 import type { FormEvent } from 'react'
 import { createApiClient } from '../api/client'
-import type { Activity, AuthState, Member, Project, ProjectMember, ProjectRole, TaskFilters, TaskPriority, TaskStatus } from '../types'
+import type { Activity, AuthState, Project, ProjectMember, ProjectRole, TaskFilters, TaskPriority, TaskStatus } from '../types'
 import { formatDate } from '../utils/date'
 import { getMemberId, getMemberName } from '../utils/member'
 import { STATUS_LABELS, STATUS_ORDER, PRIORITY_LABELS, PRIORITY_ORDER } from '../constants'
-import { getProjectCapabilities, type ProjectCapabilities } from '../utils/permissions'
+import { getAssignableTaskMembers, getProjectCapabilities, type ProjectCapabilities } from '../utils/permissions'
 import { TaskBoard } from './TaskBoard'
 import { CreateTaskModal } from './CreateTaskModal'
 import { AddMemberModal } from './AddMemberModal'
@@ -22,6 +22,7 @@ type ProjectsPageProps = {
   setProjectForm: (form: ProjectForm) => void
   onCreateProject: (event: FormEvent) => void
   onSelectProject: (id: string) => void
+  canCreateProject: boolean
 }
 
 export const ProjectsPage = ({
@@ -31,6 +32,7 @@ export const ProjectsPage = ({
   setProjectForm,
   onCreateProject,
   onSelectProject,
+  canCreateProject,
 }: ProjectsPageProps) => (
   <section className="section-page projects-page">
     <div className="page-header">
@@ -40,7 +42,7 @@ export const ProjectsPage = ({
       </div>
     </div>
 
-    <form className="project-create-card" onSubmit={onCreateProject}>
+    {canCreateProject && <form className="project-create-card" onSubmit={onCreateProject}>
       <div>
         <h2>New Project</h2>
         <p>Create a project using the existing workspace flow.</p>
@@ -61,7 +63,7 @@ export const ProjectsPage = ({
         onChange={(e) => setProjectForm({ ...projectForm, description: e.target.value })}
       />
       <button type="submit">+ New Project</button>
-    </form>
+    </form>}
 
     <div className="project-card-grid">
       {projects.map((project, index) => (
@@ -92,7 +94,7 @@ type TasksPageProps = {
   onSelectProject: (id: string) => void
   taskForm: TaskForm
   setTaskForm: (form: TaskForm) => void
-  members: Array<Member | string>
+  members: ProjectMember[]
   onCreateTask: (event: FormEvent) => void
   filters: TaskFilters
   onFiltersChange: (filters: TaskFilters) => void
@@ -207,7 +209,7 @@ export const TasksPage = ({
               aria-label="Filter by assignee"
             >
               <option value="">All members</option>
-              {members.map((m) => (
+              {getAssignableTaskMembers(members).map((m) => (
                 <option key={getMemberId(m)} value={getMemberId(m)}>{getMemberName(m)}</option>
               ))}
             </select>
@@ -256,7 +258,7 @@ export const TasksPage = ({
       ) : (
         <div className={taskStyles.emptyState}>
           <strong>No projects yet</strong>
-          <p>Create a project to start managing tasks.</p>
+          <p>No accessible projects are available yet.</p>
         </div>
       )}
 
@@ -382,8 +384,8 @@ export const MembersPage = ({
                   <div className={memberStyles.email}>{m.email}</div>
                 </div>
 
-                {/* Role — editable for non-owners if actor has assign_roles and target is not self */}
-                {m.projectRole === 'owner' || !canAssignRoles || m._id === auth.user.id ? (
+                {/* Role — managers and the actor's own role are immutable. */}
+                {m.projectRole === 'manager' || !canAssignRoles || m._id === auth.user.id ? (
                   <span className={`${memberStyles.roleBadge} ${ROLE_CLASS[m.projectRole]}`}>
                     {m.projectRole}
                   </span>
@@ -400,8 +402,8 @@ export const MembersPage = ({
                   </select>
                 )}
 
-                {/* Remove — only for non-owners, only if actor can manage, not self */}
-                {m.projectRole !== 'owner' && canManageMembers && m._id !== auth.user.id && (
+                {/* Remove — project managers and the actor cannot be removed. */}
+                {m.projectRole !== 'manager' && canManageMembers && m._id !== auth.user.id && (
                   <button
                     type="button"
                     className={memberStyles.removeBtn}

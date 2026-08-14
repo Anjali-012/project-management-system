@@ -1,7 +1,7 @@
 import { memo } from 'react'
-import type { Member, Task, TaskStatus } from '../types'
+import type { ProjectMember, Task, TaskStatus } from '../types'
 import type { ProjectCapabilities } from '../utils/permissions'
-import { canDeleteTask, canEditTask } from '../utils/permissions'
+import { canDeleteTask, canEditTask, getAssignableTaskMembers } from '../utils/permissions'
 import { getAssignedUserId, getMemberId, getMemberName } from '../utils/member'
 import { STATUS_LABELS, STATUS_ORDER } from '../constants'
 import { DueDateBadge } from './DueDateBadge'
@@ -10,7 +10,7 @@ import styles from './TaskCard/TaskCard.module.css'
 
 type Props = {
   task: Task
-  members: Array<Member | string>
+  members: ProjectMember[]
   currentUserId: string
   capabilities: ProjectCapabilities
   onDragStart: (id: string) => void
@@ -58,7 +58,7 @@ export const TaskCard = memo(({
             Task member
             <select value={getAssignedUserId(task.assignedTo)} onChange={(e) => onAssign(task, e.target.value)}>
               <option value="">Unassigned</option>
-              {members.map((member) => (
+              {getAssignableTaskMembers(members).map((member) => (
                 <option key={getMemberId(member)} value={getMemberId(member)}>
                   {getMemberName(member)}
                 </option>
