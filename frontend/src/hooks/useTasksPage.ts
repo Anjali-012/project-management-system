@@ -14,8 +14,8 @@ import type {
 } from '../types'
 import { getAssignedUserId } from '../utils/member'
 import { validateField } from '../utils/validation'
-import type { EditForm } from '../components/EditTaskModal'
-import type { TaskForm } from '../components/TaskComposer'
+import type { EditForm } from '../components/EditTaskModal/EditTaskModal'
+import type { TaskForm } from '../components/TaskComposer/TaskComposer'
 
 const EMPTY_FILTERS: TaskFilters = { search: '', status: '', priority: '', assignedTo: '' }
 

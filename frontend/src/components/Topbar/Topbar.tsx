@@ -1,6 +1,6 @@
 import { useState } from 'react'
-import type { AuthState, Notification, TaskFilters } from '../types'
-import styles from './Topbar/Topbar.module.css'
+import type { AuthState, Notification, TaskFilters } from '../../types'
+import styles from './Topbar.module.css'
 
 type Props = {
   auth: AuthState

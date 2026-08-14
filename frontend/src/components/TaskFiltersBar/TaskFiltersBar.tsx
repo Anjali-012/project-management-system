@@ -1,7 +1,7 @@
-import type { Member, TaskFilters, TaskPriority, TaskStatus } from '../types'
-import { STATUS_LABELS, STATUS_ORDER, PRIORITY_LABELS, PRIORITY_ORDER } from '../constants'
-import { getMemberId, getMemberName } from '../utils/member'
-import styles from './TaskFiltersBar/TaskFiltersBar.module.css'
+import type { Member, TaskFilters, TaskPriority, TaskStatus } from '../../types'
+import { STATUS_LABELS, STATUS_ORDER, PRIORITY_LABELS, PRIORITY_ORDER } from '../../constants'
+import { getMemberId, getMemberName } from '../../utils/member'
+import styles from './TaskFiltersBar.module.css'
 
 type Props = {
   filters: TaskFilters

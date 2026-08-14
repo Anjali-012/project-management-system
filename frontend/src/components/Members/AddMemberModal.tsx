@@ -1,7 +1,7 @@
 import type { FormEvent } from 'react'
-import type { ProjectRole } from '../types'
-import { Modal } from './Modal/Modal'
-import styles from './Members/Members.module.css'
+import type { ProjectRole } from '../../types'
+import { Modal } from '../Modal/Modal'
+import styles from './Members.module.css'
 
 type Props = {
   email: string

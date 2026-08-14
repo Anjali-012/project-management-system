@@ -1,5 +1,5 @@
 import type { FormEvent } from 'react'
-import styles from './CreateProjectModal/CreateProjectModal.module.css'
+import styles from './CreateProjectModal.module.css'
 
 type ProjectForm = {
   title: string

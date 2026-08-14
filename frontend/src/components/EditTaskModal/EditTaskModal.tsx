@@ -1,7 +1,7 @@
 import type { FormEvent } from 'react'
-import type { ProjectMember, TaskPriority, TaskStatus } from '../types'
-import { Modal } from './Modal/Modal'
-import { TaskForm, type TaskFormValues } from './TaskForm/TaskForm'
+import type { ProjectMember, TaskPriority, TaskStatus } from '../../types'
+import { Modal } from '../Modal/Modal'
+import { TaskForm, type TaskFormValues } from '../TaskForm/TaskForm'
 
 export type EditForm = {
   title: string

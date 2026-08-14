@@ -1,5 +1,5 @@
-import type { PresenceUser } from '../types'
-import styles from './PresencePill/PresencePill.module.css'
+import type { PresenceUser } from '../../types'
+import styles from './PresencePill.module.css'
 
 export const PresencePill = ({ users }: { users: PresenceUser[] }) => {
   if (users.length === 0) return null

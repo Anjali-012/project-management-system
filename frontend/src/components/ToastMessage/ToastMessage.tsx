@@ -1,5 +1,5 @@
-import type { Toast } from '../types'
-import styles from './ToastMessage/ToastMessage.module.css'
+import type { Toast } from '../..//types'
+import styles from './ToastMessage.module.css'
 
 type Props = { toast: Toast }
 

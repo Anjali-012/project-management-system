@@ -4,7 +4,7 @@ import type { Activity, AuthState, Notification, Project, ProjectMember, Project
 import { formatDate } from '../utils/date'
 import { getMemberName } from '../utils/member'
 import { getProjectCapabilities } from '../utils/permissions'
-import { PresencePill } from './PresencePill'
+import { PresencePill } from './PresencePill/PresencePill'
 
 type Props = {
   auth: AuthState

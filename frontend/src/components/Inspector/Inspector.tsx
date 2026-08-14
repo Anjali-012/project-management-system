@@ -1,6 +1,6 @@
-import type { Activity, Notification } from '../types'
-import { formatDate } from '../utils/date'
-import styles from './Inspector/Inspector.module.css'
+import type { Activity, Notification } from '../../types'
+import { formatDate } from '../../utils/date'
+import styles from './Inspector.module.css'
 
 type Props = {
   notifications: Notification[]

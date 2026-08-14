@@ -1,5 +1,5 @@
-import { formatDate } from '../utils/date'
-import styles from './DueDateBadge/DueDateBadge.module.css'
+import { formatDate } from './../../utils/date'
+import styles from './DueDateBadge.module.css'
 
 export const DueDateBadge = ({ dueDate }: { dueDate: string }) => {
   const due = new Date(dueDate)

@@ -24,13 +24,13 @@ import {
   getProjectCapabilities,
   type ProjectCapabilities,
 } from '../utils/permissions'
-import { TaskBoard } from './TaskBoard'
+import { TaskBoard } from './TaskBoard/TaskBoard'
 import { CreateTaskModal } from './CreateTaskModal'
-import { AddMemberModal } from './AddMemberModal'
-import type { TaskForm } from './TaskComposer'
+import { AddMemberModal } from './Members/AddMemberModal'
+import type { TaskFormValues } from './TaskForm/TaskForm'
 import taskStyles from './Tasks/Tasks.module.css'
 import memberStyles from './Members/Members.module.css'
-import { CreateProjectModal } from './CreateProjectModal'
+import { CreateProjectModal } from './CreateProjectModal/CreateProjectModal'
 
 type ProjectForm = {
   title: string
@@ -125,8 +125,8 @@ type TasksPageProps = {
   selectedProjectId: string
   selectedProject?: Project
   onSelectProject: (id: string) => void
-  taskForm: TaskForm
-  setTaskForm: (form: TaskForm) => void
+  taskForm: TaskFormValues
+setTaskForm: (form: TaskFormValues) => void
   members: ProjectMember[]
   onCreateTask: (event: FormEvent) => void
   filters: TaskFilters

@@ -1,6 +1,6 @@
-import type { TaskPriority } from '../types'
-import { PRIORITY_LABELS } from '../constants'
-import styles from './PriorityBadge/PriorityBadge.module.css'
+import type { TaskPriority } from '../../types'
+import { PRIORITY_LABELS } from '../../constants'
+import styles from './PriorityBadge.module.css'
 
 const priorityStyles: Record<TaskPriority, string> = {
   low: styles.priorityLow,

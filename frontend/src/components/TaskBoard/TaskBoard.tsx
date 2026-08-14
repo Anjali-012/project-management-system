@@ -1,10 +1,10 @@
 import type { DragEvent } from 'react'
-import type { ProjectMember, Task, TaskStatus } from '../types'
-import { STATUS_ORDER, STATUS_LABELS } from '../constants'
-import type { ProjectCapabilities } from '../utils/permissions'
-import { canEditTask } from '../utils/permissions'
-import { TaskCard } from './TaskCard'
-import styles from './TaskBoard/TaskBoard.module.css'
+import type { ProjectMember, Task, TaskStatus } from '../../types'
+import { STATUS_ORDER, STATUS_LABELS } from '../../constants'
+import type { ProjectCapabilities } from '../../utils/permissions'
+import { canEditTask } from '../../utils/permissions'
+import { TaskCard } from '../TaskCard/TaskCard'
+import styles from './TaskBoard.module.css'
 
 type Props = {
   tasksByStatus: Record<TaskStatus, Task[]>

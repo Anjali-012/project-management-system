@@ -1,7 +1,7 @@
 import { useCallback, useRef, useState, type FormEvent } from 'react'
-import type { Comment, Task } from '../types'
-import { formatDate } from '../utils/date'
-import styles from './CommentPanel/CommentPanel.module.css'
+import type { Comment, Task } from '../../types'
+import { formatDate } from '../../utils/date'
+import styles from './CommentPanel.module.css'
 
 type Props = {
   task: Task

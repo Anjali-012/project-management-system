@@ -1,8 +1,8 @@
 import type { FormEvent } from 'react'
-import type { Member, TaskPriority } from '../types'
-import { getMemberId, getMemberName } from '../utils/member'
-import { PRIORITY_ORDER, PRIORITY_LABELS } from '../constants'
-import styles from './TaskComposer/TaskComposer.module.css'
+import type { Member, TaskPriority } from '../../types'
+import { getMemberId, getMemberName } from '../../utils/member'
+import { PRIORITY_ORDER, PRIORITY_LABELS } from '../../constants'
+import styles from './TaskComposer.module.css'
 
 export type TaskForm = {
   title: string

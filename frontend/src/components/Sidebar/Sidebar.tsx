@@ -1,4 +1,4 @@
-import styles from './Sidebar/Sidebar.module.css'
+import styles from './Sidebar.module.css'
 
 export type WorkspaceSection = 'dashboard' | 'projects' | 'tasks' | 'members' | 'calendar' | 'activity' | 'reports' | 'settings'
 

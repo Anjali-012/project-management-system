@@ -1,14 +1,14 @@
 import { memo, useState } from 'react'
 import { createPortal } from 'react-dom'
-import type { ProjectMember, Task, TaskStatus } from '../types'
-import type { ProjectCapabilities } from '../utils/permissions'
-import { canDeleteTask, canEditTask, getAssignableTaskMembers } from '../utils/permissions'
-import { getAssignedUserId, getMemberId, getMemberName } from '../utils/member'
-import { STATUS_LABELS, STATUS_ORDER } from '../constants'
-import { DueDateBadge } from './DueDateBadge'
-import { PriorityBadge } from './PriorityBadge'
-import { DeleteTaskModal } from './DeleteTaskModal'
-import styles from './TaskCard/TaskCard.module.css'
+import type { ProjectMember, Task, TaskStatus } from '../../types'
+import type { ProjectCapabilities } from '../../utils/permissions'
+import { canDeleteTask, canEditTask, getAssignableTaskMembers } from '../../utils/permissions'
+import { getAssignedUserId, getMemberId, getMemberName } from '../../utils/member'
+import { STATUS_LABELS, STATUS_ORDER } from '../../constants'
+import { DueDateBadge } from '../DueDateBadge/DueDateBadge'
+import { PriorityBadge } from '../PriorityBadge/PriorityBadge'
+import { DeleteTaskModal } from '../DeleteTaskModal/DeleteTaskModal'
+import styles from './TaskCard.module.css'
 
 type Props = {
   task: Task
