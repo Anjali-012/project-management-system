@@ -19,7 +19,7 @@ const loginUser = asyncHandler(async (req, res) => {
     message: "Login successful",
     token,
     user: {
-      id: user._id,
+      id: user.id,
       name: user.name,
       email: user.email,
       role: user.role,

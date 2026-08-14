@@ -2,10 +2,23 @@ export type User = {
   id: string
   name: string
   email: string
-  role: 'admin' | 'member'
+  role: 'admin' | 'manager' | 'member'
 }
 
+export type ProjectRole = 'owner' | 'manager' | 'member' | 'viewer'
+
 export type Member = Pick<User, 'id' | 'name' | 'email' | 'role'> & { _id?: string }
+
+export type ProjectMember = {
+  _id: string
+  name: string
+  email: string
+  globalRole: 'admin' | 'manager' | 'member'
+  projectRole: ProjectRole
+  joinedAt: string
+}
+
+export type TaskAssignee = Member | ProjectMember | string
 
 export type Project = {
   _id: string

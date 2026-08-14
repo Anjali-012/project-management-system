@@ -12,8 +12,8 @@ import type {
   TaskStatus,
 } from '../../types'
 
-import type { EditForm } from '../../components/EditTaskModal'
-import type { TaskForm } from '../../components/TaskComposer'
+import type { EditForm } from '../../components/EditTaskModal/EditTaskModal'
+import type { TaskForm } from '../../components/TaskComposer/TaskComposer'
 
 type WorkspaceState = {
   // runtime data

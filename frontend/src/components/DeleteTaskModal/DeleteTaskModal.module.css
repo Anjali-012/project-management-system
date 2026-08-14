@@ -1,0 +1,39 @@
+.message {
+  color: var(--ink-600);
+  font-size: 14px;
+  line-height: 1.55;
+}
+
+.actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.actions button {
+  min-width: 84px;
+  height: 40px;
+  border-radius: var(--r-md);
+  padding: 0 14px;
+  font-family: var(--font);
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.cancel {
+  border: 1px solid var(--border-default);
+  background: var(--bg-white);
+  color: var(--ink-700);
+}
+
+.delete {
+  border: 1px solid var(--rose-500);
+  background: var(--rose-500);
+  color: #fff;
+}
+
+.actions button:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}

@@ -8,6 +8,7 @@ const taskRoutes = require("./routes/task.routes");
 const errorMiddleware = require("./middlewares/error.middleware");
 const activityRoutes = require("./routes/activity.routes");
 const notificationRoutes = require("./routes/notification.routes");
+const dashboardRoutes = require("./routes/dashboard.routes");
 
 const app = express();
 
@@ -33,6 +34,8 @@ app.use("/api/tasks", taskRoutes);
 app.use("/api/activity", activityRoutes);
 
 app.use("/api/notifications", notificationRoutes);
+
+app.use("/api/dashboard", dashboardRoutes);
 
 // global error middleware
 app.use(errorMiddleware);

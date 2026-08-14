@@ -1,4 +1,5 @@
 const Project = require("../models/project.model");
+const getProjectMembership = require("../utils/getProjectMembership");
 const ApiError = require("../utils/ApiError");
 const asyncHandler = require("../utils/asyncHandler");
 
@@ -15,11 +16,11 @@ const isProjectMember = asyncHandler(async (req, res, next) => {
     throw new ApiError(404, "Project not found");
   }
 
-  const isMember = project.members.some(
-    (memberId) => memberId.toString() === req.user.userId,
-  );
+  const membership = req.user.role === "admin"
+    ? null
+    : await getProjectMembership(req.user.userId, projectId);
 
-  if (!isMember) {
+  if (req.user.role !== "admin" && !membership) {
     throw new ApiError(403, "You are not a member of this project");
   }
 

@@ -1,0 +1,245 @@
+.toolbar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 22px;
+  flex-wrap: wrap;
+}
+
+.projectSelect {
+  flex: 1;
+  min-width: 220px;
+  height: 46px;
+  border: 1px solid #dfe5f0;
+  border-radius: 10px;
+  background: #fff;
+  color: #101936;
+  font-size: 14px;
+  font-weight: 600;
+  box-shadow: 0 8px 22px rgba(15, 22, 35, 0.025);
+}
+
+.projectSelect:focus {
+  border-color: #c7c2ff;
+  box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.08);
+}
+
+.spacer {
+  display: none;
+}
+
+.inviteBtn {
+  width: auto !important;
+  min-width: 170px;
+  height: 46px;
+  padding: 0 20px;
+  white-space: nowrap;
+}
+
+/* ─────────────────────────────────────────
+   MEMBER LIST
+   ───────────────────────────────────────── */
+
+.memberList {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.memberRow {
+  min-height: 68px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 18px;
+  background: rgba(255, 255, 255, 0.94);
+  border: 1px solid #dfe5f0;
+  border-radius: 12px;
+  box-shadow: 0 8px 24px rgba(15, 22, 35, 0.025);
+  transition:
+    border-color 0.14s ease,
+    box-shadow 0.14s ease,
+    transform 0.14s ease;
+}
+
+.memberRow:hover {
+  border-color: #cfd7e5;
+  box-shadow: 0 12px 28px rgba(15, 22, 35, 0.045);
+}
+
+.avatar {
+  width: 38px;
+  height: 38px;
+  flex: 0 0 38px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: #e8edff;
+  color: #4f46e5;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.info {
+  flex: 1;
+  min-width: 0;
+}
+
+.name {
+  color: #101936;
+  font-size: 14px;
+  font-weight: 700;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.email {
+  margin-top: 2px;
+  color: #94a3b8;
+  font-size: 12px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ─────────────────────────────────────────
+   ROLE
+   ───────────────────────────────────────── */
+
+.roleBadge {
+  flex: 0 0 auto;
+  padding: 5px 10px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: capitalize;
+  letter-spacing: 0.01em;
+}
+
+.roleOwner {
+  background: #fff3d6;
+  color: #b45309;
+}
+
+.roleManager {
+  background: #eeeaff;
+  color: #4f46e5;
+}
+
+.roleMember {
+  background: #e6f8f1;
+  color: #047857;
+}
+
+.roleViewer {
+  background: #f1f5f9;
+  color: #64748b;
+}
+
+.roleSelect {
+  width: auto !important;
+  min-width: 110px;
+  max-width: 140px;
+  height: 34px;
+  flex: 0 0 auto;
+  padding: 0 30px 0 10px;
+  border: 1px solid #dfe5f0;
+  border-radius: 8px;
+  background-color: #fff;
+  color: #334155;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+/* ─────────────────────────────────────────
+   REMOVE
+   ───────────────────────────────────────── */
+
+.removeBtn {
+  width: 30px;
+  height: 30px;
+  flex: 0 0 30px;
+  display: grid;
+  place-items: center;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  background: transparent;
+  color: #cbd5e1;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.14s ease;
+}
+
+.removeBtn:hover {
+  background: #fff1f2;
+  border-color: #fecdd3;
+  color: #e11d48;
+}
+
+/* ─────────────────────────────────────────
+   INVITE MODAL
+   ───────────────────────────────────────── */
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.formRow {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.formRow label {
+  color: #475569;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.submitBtn {
+  margin-top: 4px;
+}
+
+.empty {
+  min-height: 180px;
+  display: grid;
+  place-items: center;
+  color: #94a3b8;
+  font-size: 13px;
+  text-align: center;
+}
+
+/* ─────────────────────────────────────────
+   RESPONSIVE
+   ───────────────────────────────────────── */
+
+@media (max-width: 700px) {
+  .toolbar {
+    align-items: stretch;
+  }
+
+  .projectSelect {
+    min-width: 0;
+    width: 100%;
+  }
+
+  .inviteBtn {
+    width: 100% !important;
+  }
+
+  .memberRow {
+    gap: 10px;
+    padding: 12px;
+  }
+
+  .email {
+    max-width: 180px;
+  }
+
+  .roleSelect {
+    min-width: 90px;
+  }
+}

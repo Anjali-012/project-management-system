@@ -4,8 +4,9 @@ const router = express.Router();
 const { protect } = require("../middlewares/auth.middleware");
 const isProjectMember = require("../middlewares/projectMember.middleware");
 
-const { getProjectActivity } = require("../controllers/activity.controller");
+const { getAllActivity, getProjectActivity } = require("../controllers/activity.controller");
 
+router.get("/", protect, getAllActivity);
 router.get("/:projectId", protect, isProjectMember, getProjectActivity);
 
 module.exports = router;

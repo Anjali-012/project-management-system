@@ -1,0 +1,125 @@
+.authShell {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg-page);
+  background-image: radial-gradient(ellipse 70% 50% at 50% 0%, rgba(99, 102, 241, 0.06) 0%, transparent 65%);
+  padding: 24px;
+}
+
+.authPanel {
+  width: 100%;
+  max-width: 420px;
+  display: flex;
+  flex-direction: column;
+  gap: 36px;
+}
+
+.authPanel > div > .eyebrow {
+  font-family: var(--mono);
+  font-size: 10.5px;
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--indigo-600);
+  margin-bottom: 14px;
+}
+
+.authPanel > div > h1 {
+  font-size: 28px;
+  font-weight: 700;
+  letter-spacing: -0.025em;
+  color: var(--ink-900);
+  line-height: 1.2;
+  margin-bottom: 10px;
+}
+
+.authPanel > div > .lede {
+  font-size: 14px;
+  color: var(--ink-500);
+  line-height: 1.65;
+}
+
+.form {
+  background: var(--bg-white);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--r-xl);
+  padding: 28px;
+  box-shadow: var(--shadow-lg);
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.segmented {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4px;
+  background: var(--bg-muted);
+  padding: 4px;
+  border-radius: var(--r-lg);
+  margin-bottom: 4px;
+}
+
+.segmented button {
+  border: 0;
+  background: transparent;
+  padding: 8px 14px;
+  border-radius: var(--r-md);
+  font-family: var(--font);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink-500);
+  cursor: pointer;
+  transition: all 0.13s;
+}
+
+.segmented button.active {
+  background: var(--bg-white);
+  color: var(--indigo-600);
+  box-shadow: var(--shadow-sm);
+}
+
+.segmented button:not(.active):hover {
+  color: var(--ink-700);
+}
+
+.passwordField {
+  position: relative;
+  display: block;
+  width: 100%;
+}
+
+.passwordField input {
+  padding-right: 42px;
+}
+
+.passwordToggle {
+  position: absolute;
+  top: 50%;
+  right: 10px;
+  transform: translateY(-50%);
+  background: transparent;
+  border: 0;
+  color: var(--ink-400);
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  transition: color 0.12s;
+}
+
+.passwordToggle:hover {
+  color: var(--ink-700);
+}
+
+.passwordToggle svg {
+  width: 16px;
+  height: 16px;
+  stroke: currentColor;
+  fill: none;
+  stroke-width: 1.75;
+  stroke-linecap: round;
+}

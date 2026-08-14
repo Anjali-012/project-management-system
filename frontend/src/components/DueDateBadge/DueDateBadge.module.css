@@ -1,0 +1,31 @@
+.dueBadge {
+  font-family: var(--font);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0;
+  padding: 2px 7px;
+  border-radius: 20px;
+  border: 1px solid;
+}
+
+.dueBadge::before {
+  content: '▣ ';
+}
+
+.dueOk {
+  background: var(--emerald-50);
+  border-color: var(--emerald-100);
+  color: #065f46;
+}
+
+.dueSoon {
+  background: var(--amber-50);
+  border-color: var(--amber-100);
+  color: #92400e;
+}
+
+.dueOverdue {
+  background: var(--rose-50);
+  border-color: var(--rose-100);
+  color: var(--rose-600);
+}

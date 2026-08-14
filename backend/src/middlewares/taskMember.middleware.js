@@ -1,5 +1,6 @@
 const Task = require("../models/task.model");
 const Project = require("../models/project.model");
+const getProjectMembership = require("../utils/getProjectMembership");
 const ApiError = require("../utils/ApiError");
 const asyncHandler = require("../utils/asyncHandler");
 
@@ -21,11 +22,11 @@ const isTaskMember = asyncHandler(async (req, res, next) => {
     throw new ApiError(404, "Project not found");
   }
 
-  const isMember = project.members.some(
-    (memberId) => memberId.toString() === req.user.userId,
-  );
+  const membership = req.user.role === "admin"
+    ? null
+    : await getProjectMembership(req.user.userId, project._id);
 
-  if (!isMember) {
+  if (req.user.role !== "admin" && !membership) {
     throw new ApiError(403, "You are not allowed to access this task");
   }
 
