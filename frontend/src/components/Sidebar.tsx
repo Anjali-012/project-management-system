@@ -26,10 +26,10 @@ export const Sidebar = ({
         ['projects', '□', 'Projects'],
         ['tasks', '☑', 'Tasks'],
         ['members', '♙', 'Members'],
-        ['calendar', '▣', 'Calendar'],
+        // ['calendar', '▣', 'Calendar'],
         ['activity', '◷', 'Activity'],
-        ['reports', '⌁', 'Reports'],
-        ['settings', '⚙', 'Settings'],
+        // ['reports', '⌁', 'Reports'],
+        // ['settings', '⚙', 'Settings'],
       ].map(([section, icon, label]) => (
         <button
           key={section}
