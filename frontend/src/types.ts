@@ -50,6 +50,7 @@ export type Task = {
   createdBy?: Pick<User, 'id' | 'name' | 'email'> & { _id?: string }
   comments: Comment[]
   createdAt: string
+  updatedAt: string
 }
 
 export type Activity = {
@@ -103,4 +104,19 @@ export type TaskFilters = {
   status: TaskStatus | ''
   priority: TaskPriority | ''
   assignedTo: string
+}
+
+export type TaskPagination = {
+  page: number
+  limit: number
+  total: number
+  totalPages: number
+}
+
+export type ExternalDirectoryUser = {
+  id: number
+  name: string
+  email: string
+  company: string
+  city: string
 }

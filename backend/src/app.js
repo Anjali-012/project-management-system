@@ -9,6 +9,8 @@ const errorMiddleware = require("./middlewares/error.middleware");
 const activityRoutes = require("./routes/activity.routes");
 const notificationRoutes = require("./routes/notification.routes");
 const dashboardRoutes = require("./routes/dashboard.routes");
+const userRoutes = require("./routes/user.routes");
+const externalRoutes = require("./routes/external.routes");
 
 const app = express();
 
@@ -36,6 +38,10 @@ app.use("/api/activity", activityRoutes);
 app.use("/api/notifications", notificationRoutes);
 
 app.use("/api/dashboard", dashboardRoutes);
+
+app.use("/api/users", userRoutes);
+
+app.use("/api/external", externalRoutes);
 
 // global error middleware
 app.use(errorMiddleware);

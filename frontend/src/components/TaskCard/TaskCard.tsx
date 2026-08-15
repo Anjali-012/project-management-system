@@ -21,11 +21,12 @@ type Props = {
   onEdit: (task: Task) => void
   onDelete: (task: Task) => void
   onOpenComments: (task: Task) => void
+  onOpenDetails: (task: Task) => void
 }
 
 export const TaskCard = memo(({
   task, members, currentUserId, capabilities,
-  onDragStart, onAssign, onStatusChange, onEdit, onDelete, onOpenComments,
+  onDragStart, onAssign, onStatusChange, onEdit, onDelete, onOpenComments, onOpenDetails,
 }: Props) => {
   const [deleteOpen, setDeleteOpen] = useState(false)
   const creatorId = task.createdBy?.id || task.createdBy?._id || ''
@@ -81,6 +82,7 @@ export const TaskCard = memo(({
       )}
 
       <div className={`${styles.taskActions} ${deletable ? '' : styles.taskActionsNoDelete}`}>
+        <button type="button" onClick={() => onOpenDetails(task)}>View details</button>
         {editable && (
           <button type="button" onClick={() => onEdit(task)}>Edit Task</button>
         )}

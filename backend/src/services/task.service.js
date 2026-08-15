@@ -102,20 +102,30 @@ const createTask = async ({ payload, userId, project, userRole }) => {
 
 const getTasks = async ({
   projectId, status, search, priority, assignedTo,
-  page = 1, limit = 50, sortBy = "createdAt", order = "desc",
+  page = 1, limit = 20, sortBy = "createdAt", order = "desc", sortOrder,
+  userId, userRole,
 }) => {
   const filter = { isDeleted: false };
-  if (projectId) filter.project = projectId;
+  if (projectId) {
+    if (userRole !== "admin") {
+      const membership = await ProjectMember.exists({ user: userId, project: projectId });
+      if (!membership) throw new ApiError(403, "You are not a member of this project");
+    }
+    filter.project = projectId;
+  } else if (userRole !== "admin") {
+    const accessibleProjectIds = await ProjectMember.find({ user: userId }).distinct("project");
+    filter.project = { $in: accessibleProjectIds };
+  }
   if (status) filter.status = status;
   if (priority) filter.priority = priority;
   if (assignedTo) filter.assignedTo = assignedTo;
   if (search) filter.title = { $regex: search, $options: "i" };
 
-  const pageNumber = Number(page);
-  const limitNumber = Number(limit);
+  const pageNumber = Math.max(1, Number(page) || 1);
+  const limitNumber = Math.min(100, Math.max(1, Number(limit) || 20));
   const skip = (pageNumber - 1) * limitNumber;
   const sortOptions = {
-    [sortBy]: order === "asc" ? 1 : -1,
+    [sortBy]: (sortOrder || order) === "asc" ? 1 : -1,
   };
 
   const [tasks, totalTasks] = await Promise.all([
@@ -229,5 +239,6 @@ module.exports = {
   deleteTask,
   findProjectForTask,
   getTasks,
+  populateTask,
   updateTask,
 };

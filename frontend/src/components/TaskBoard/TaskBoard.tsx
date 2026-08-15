@@ -19,11 +19,12 @@ type Props = {
   onEdit: (task: Task) => void
   onDelete: (task: Task) => void
   onOpenComments: (task: Task) => void
+  onOpenDetails: (task: Task) => void
 }
 
 export const TaskBoard = ({
   tasksByStatus, members, currentUserId, capabilities, draggedTaskId,
-  onDragStart, onDrop, onAssign, onStatusChange, onEdit, onDelete, onOpenComments,
+  onDragStart, onDrop, onAssign, onStatusChange, onEdit, onDelete, onOpenComments, onOpenDetails,
 }: Props) => {
   const draggedTask = STATUS_ORDER
     .flatMap((status) => tasksByStatus[status])
@@ -78,6 +79,7 @@ export const TaskBoard = ({
                 onEdit={onEdit}
                 onDelete={onDelete}
                 onOpenComments={onOpenComments}
+                onOpenDetails={onOpenDetails}
               />
             ))
           )}

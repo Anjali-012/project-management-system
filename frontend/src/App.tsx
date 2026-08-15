@@ -9,6 +9,7 @@ import { AuthScreen } from './components/AuthScreen/AuthScreen'
 import { CommentPanel } from './components/CommentPanel/CommentPanel'
 import { DashboardOverview } from './components/DashboardOverview/DashboardOverview'
 import { EditTaskModal } from './components/EditTaskModal/EditTaskModal'
+import { TaskDetailsModal } from './components/TaskDetailsModal/TaskDetailsModal'
 import { Sidebar, type WorkspaceSection } from './components/Sidebar/Sidebar'
 import { ToastMessage } from './components/ToastMessage/ToastMessage'
 import { Topbar } from './components/Topbar/Topbar'
@@ -146,7 +147,13 @@ const openMembers = () => handleSectionChange('members')
               onEdit={tasks.openTaskEdit}
               onDelete={tasks.deleteTask}
               onOpenComments={tasks.setCommentTask}
+              onOpenDetails={tasks.openTaskDetails}
               draggedTaskId={tasks.draggedTaskId}
+              pagination={tasks.pagination}
+              sortBy={tasks.sortBy}
+              sortOrder={tasks.sortOrder}
+              onChangePage={tasks.changePage}
+              onChangeSort={tasks.changeSort}
             />
           )}
 
@@ -187,6 +194,17 @@ const openMembers = () => handleSectionChange('members')
           members={tasks.taskProjectMembers}
           onSave={tasks.saveTaskEdit}
           onClose={tasks.closeTaskEdit}
+        />
+      )}
+
+      {tasks.detailTask && (
+        <TaskDetailsModal
+          task={tasks.detailTask}
+          loading={tasks.detailLoading}
+          onClose={tasks.closeTaskDetails}
+          onEdit={(task) => { tasks.closeTaskDetails(); tasks.openTaskEdit(task) }}
+          onOpenComments={(task) => { tasks.closeTaskDetails(); tasks.setCommentTask(task) }}
+          canEdit={canEditTask(taskCapabilities, tasks.detailTask.createdBy?.id || tasks.detailTask.createdBy?._id || '', auth.user.id)}
         />
       )}
 

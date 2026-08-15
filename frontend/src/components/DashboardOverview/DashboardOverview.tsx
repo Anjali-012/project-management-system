@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { createApiClient } from '../../api/client'
-import type { Activity, AuthState, Notification, Project, ProjectMember, ProjectRole, Task } from '../../types'
+import type { Activity, AuthState, ExternalDirectoryUser, Notification, Project, ProjectMember, ProjectRole, Task } from '../../types'
 import { formatDate } from '../../utils/date'
 import { getMemberName } from '../../utils/member'
 import { getProjectCapabilities } from '../../utils/permissions'
@@ -26,6 +26,8 @@ export const DashboardOverview = ({
   const [activities, setActivities] = useState<Activity[]>([])
   const [loading, setLoading] = useState(false)
   const [scopedProjectRole, setScopedProjectRole] = useState<ProjectRole | null>(null)
+  const [statistics, setStatistics] = useState({ totalTasks: 0, pendingTasks: 0, inProgressTasks: 0, completedTasks: 0, overdueTasks: 0, myTasks: 0 })
+  const [directoryUsers, setDirectoryUsers] = useState<ExternalDirectoryUser[]>([])
 
   const { request } = useMemo(() => createApiClient(auth.token), [auth.token])
 
@@ -36,16 +38,25 @@ export const DashboardOverview = ({
     let cancelled = false
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setLoading(true)
-    request<{ data: { tasks: Task[]; activities: Activity[] } }>(url)
+    request<{ data: { tasks: Task[]; activities: Activity[] }; totalTasks: number; pendingTasks: number; inProgressTasks: number; completedTasks: number; overdueTasks: number; myTasks: number }>(url)
       .then((body) => {
         if (cancelled) return
         setTasks(body.data.tasks)
         setActivities(body.data.activities.slice(0, 8))
+        setStatistics({ totalTasks: body.totalTasks, pendingTasks: body.pendingTasks, inProgressTasks: body.inProgressTasks, completedTasks: body.completedTasks, overdueTasks: body.overdueTasks, myTasks: body.myTasks })
       })
       .catch(() => undefined)
       .finally(() => { if (!cancelled) setLoading(false) })
     return () => { cancelled = true }
   }, [projectFilter, request])
+
+  useEffect(() => {
+    let cancelled = false
+    request<{ data: ExternalDirectoryUser[] }>('/api/external/users')
+      .then((body) => { if (!cancelled) setDirectoryUsers(body.data.slice(0, 4)) })
+      .catch(() => undefined)
+    return () => { cancelled = true }
+  }, [request])
 
   useEffect(() => {
     if (projectFilter === 'all') {
@@ -73,21 +84,16 @@ export const DashboardOverview = ({
     auth.user.role,
   )
 
-  const [renderedAt] = useState(() => Date.now())
-  const dueSoonCount = tasks.filter((task) => {
-    if (!task.dueDate || task.status === 'done') return false
-    const due = new Date(task.dueDate).getTime()
-    return due >= renderedAt && due - renderedAt <= 7 * 86_400_000
-  }).length
-
   const selectedProject = projects.find((p) => p._id === projectFilter)
   const displayMembers = selectedProject?.members ?? []
 
   const stats = [
-    { label: 'Total Tasks', value: tasks.length, hint: 'All tasks in scope', icon: '□', tone: 'purple' },
-    { label: 'In Progress', value: tasks.filter((t) => t.status === 'in-progress').length, hint: 'Tasks in progress', icon: '▣', tone: 'amber' },
-    { label: 'Completed', value: tasks.filter((t) => t.status === 'done').length, hint: 'Tasks completed', icon: '✓', tone: 'green' },
-    { label: 'Due Soon', value: dueSoonCount, hint: 'Tasks due this week', icon: '◷', tone: 'blue' },
+    { label: 'Total Tasks', value: statistics.totalTasks, hint: 'All tasks in scope', icon: '□', tone: 'purple' },
+    { label: 'Pending', value: statistics.pendingTasks, hint: 'Not started', icon: '○', tone: 'blue' },
+    { label: 'In Progress', value: statistics.inProgressTasks, hint: 'Tasks in progress', icon: '▣', tone: 'amber' },
+    { label: 'Completed', value: statistics.completedTasks, hint: 'Tasks completed', icon: '✓', tone: 'green' },
+    { label: 'Overdue', value: statistics.overdueTasks, hint: 'Past due date', icon: '!', tone: 'amber' },
+    { label: 'My Tasks', value: statistics.myTasks, hint: 'Assigned to you', icon: '♙', tone: 'purple' },
   ]
 
   const heroTitle = projectFilter === 'all' ? 'All Projects' : (selectedProject?.title ?? 'Dashboard')
@@ -234,6 +240,18 @@ export const DashboardOverview = ({
               </div>
             </article>
           </div>
+
+          <article className="summary-panel" style={{ marginTop: '1.25rem' }}>
+            <div className="summary-panel-head"><h2>External Directory</h2><span>JSONPlaceholder</span></div>
+            <div className="summary-list">
+              {directoryUsers.length === 0 ? <p className="empty-inline">Directory unavailable right now.</p> : directoryUsers.map((user) => (
+                <div className="summary-item" key={user.id}>
+                  <span className="summary-status status-activity" />
+                  <div><strong>{user.name}</strong><small>{user.company} · {user.city} · {user.email}</small></div>
+                </div>
+              ))}
+            </div>
+          </article>
         </>
       )}
     </section>

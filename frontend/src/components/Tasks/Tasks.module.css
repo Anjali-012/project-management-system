@@ -87,6 +87,26 @@
   background: var(--rose-50);
 }
 
+.pagination {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  margin-top: 1rem;
+  color: var(--text-secondary);
+  font-size: 0.875rem;
+}
+
+.pagination button {
+  border: 1px solid var(--border-default);
+  border-radius: 8px;
+  background: var(--surface);
+  padding: 0.45rem 0.7rem;
+  color: inherit;
+}
+
+.pagination button:disabled { opacity: 0.5; cursor: not-allowed; }
+
 /* Spacer pushes create button to the right */
 .spacer {
   flex: 1;

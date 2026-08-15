@@ -9,6 +9,7 @@ import type {
   ProjectRole,
   TaskFilters,
   TaskPriority,
+  TaskPagination,
   TaskStatus,
 } from '../../types'
 import { formatDate } from '../../utils/date'
@@ -141,7 +142,13 @@ setTaskForm: (form: TaskFormValues) => void
   onEdit: TasksPagePropsTask
   onDelete: TasksPagePropsTask
   onOpenComments: TasksPagePropsTask
+  onOpenDetails: TasksPagePropsTask
   draggedTaskId: string
+  pagination: TaskPagination
+  sortBy: string
+  sortOrder: 'asc' | 'desc'
+  onChangePage: (page: number) => void
+  onChangeSort: (sortBy: string) => void
 }
 
 type Task = import('../../types').Task
@@ -177,7 +184,13 @@ export const TasksPage = ({
   onEdit,
   onDelete,
   onOpenComments,
+  onOpenDetails,
   draggedTaskId,
+  pagination,
+  sortBy,
+  sortOrder,
+  onChangePage,
+  onChangeSort,
 }: TasksPageProps) => {
   const [createOpen, setCreateOpen] = useState(false)
   const hasActiveFilters =
@@ -292,6 +305,18 @@ export const TasksPage = ({
               ))}
             </select>
 
+            <select className={taskStyles.filterSelect} value={sortBy} onChange={(e) => onChangeSort(e.target.value)} aria-label="Sort tasks">
+              <option value="createdAt">Created date</option>
+              <option value="updatedAt">Last updated</option>
+              <option value="dueDate">Due date</option>
+              <option value="title">Task name</option>
+              <option value="priority">Priority</option>
+              <option value="status">Status</option>
+            </select>
+            <button type="button" className={taskStyles.clearBtn} onClick={() => onChangeSort(sortBy)}>
+              {sortOrder === 'asc' ? '↑ Asc' : '↓ Desc'}
+            </button>
+
             {hasActiveFilters && (
               <button
                 type="button"
@@ -319,20 +344,28 @@ export const TasksPage = ({
 
       {/* ── Board or empty state ── */}
       {selectedProject ? (
-        <TaskBoard
-          tasksByStatus={tasksByStatus}
-          members={members}
-          currentUserId={currentUserId}
-          capabilities={capabilities}
-          draggedTaskId={draggedTaskId}
-          onDragStart={onDragStart}
-          onDrop={onDrop}
-          onAssign={onAssign}
-          onStatusChange={onStatusChange}
-          onEdit={onEdit}
-          onDelete={onDelete}
-          onOpenComments={onOpenComments}
-        />
+        <>
+          <TaskBoard
+            tasksByStatus={tasksByStatus}
+            members={members}
+            currentUserId={currentUserId}
+            capabilities={capabilities}
+            draggedTaskId={draggedTaskId}
+            onDragStart={onDragStart}
+            onDrop={onDrop}
+            onAssign={onAssign}
+            onStatusChange={onStatusChange}
+            onEdit={onEdit}
+            onDelete={onDelete}
+            onOpenComments={onOpenComments}
+            onOpenDetails={onOpenDetails}
+          />
+          <div className={taskStyles.pagination} aria-label="Task pagination">
+            <span>{pagination.total} task{pagination.total === 1 ? '' : 's'} · Page {pagination.page} of {pagination.totalPages}</span>
+            <button type="button" onClick={() => onChangePage(pagination.page - 1)} disabled={pagination.page <= 1}>Previous</button>
+            <button type="button" onClick={() => onChangePage(pagination.page + 1)} disabled={pagination.page >= pagination.totalPages}>Next</button>
+          </div>
+        </>
       ) : (
         <div className={taskStyles.emptyState}>
           <strong>No projects yet</strong>

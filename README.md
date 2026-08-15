@@ -1,6 +1,6 @@
-# Internal Project Management System
+# Task Management System
 
-A real-time project management tool built with the MERN stack. Multiple users working on the same project see task changes instantly — no refresh needed.
+An internal task and project management dashboard built for the Webvory full-stack assignment. It preserves a production-style project workspace: authenticated users collaborate on projects, manage tasks, track activity, receive notifications, and see live changes without a refresh.
 
 ---
 
@@ -53,6 +53,10 @@ React + Vite (TypeScript)
 - All users viewing the same project receive task events in real time.
 - Activity log records every task change; notifications are created on member addition and task assignment.
 - Assigned user receives an email notification when a task is created or re-assigned to them.
+- Task list supports database-backed search, status/priority/assignee filters, safe sorting, and pagination.
+- Dashboard provides total, pending, in-progress, completed, overdue, and current-user task counts from live data.
+- Task details load from the API and include metadata, comments, and edit access.
+- External Directory proxies and caches JSONPlaceholder users through the backend with a timeout.
 
 ### Roles & Permissions
 - `member` — access and manage tasks in projects they belong to.
@@ -77,7 +81,7 @@ React + Vite (TypeScript)
 
 **projects** — `title`, `description`, `createdBy` → User, `members` → [User]
 
-**tasks** — `title`, `description`, `status`, `project` → Project, `assignedTo` → User, `createdBy` → User, `isDeleted`, `deletedAt`
+**tasks** — `title`, `description`, `status`, `priority`, `dueDate`, `project` → Project, `assignedTo` → User, `createdBy` → User, embedded `comments`, `isDeleted`, `deletedAt`
 
 **activities** — `project` → Project, `user` → User, `action`, `metadata`
 
@@ -96,11 +100,49 @@ React + Vite (TypeScript)
 | POST | `/api/projects/:projectId/members` | JWT, creator/admin | Add a member by email |
 | GET | `/api/tasks?projectId=:id` | JWT, member | List tasks for a project |
 | POST | `/api/tasks` | JWT, member | Create a task |
-| PATCH | `/api/tasks/:id` | JWT, member | Update title, description, assignee, or status |
+| GET | `/api/tasks/:id` | JWT, member | Load a task's detail, including comments |
+| PUT/PATCH | `/api/tasks/:id` | JWT, member | Update title, description, priority, due date, assignee, or status |
 | DELETE | `/api/tasks/:id` | JWT, creator/admin | Soft-delete a task |
+| GET | `/api/tasks/:id/comments` | JWT, member | List a task's comments |
+| POST | `/api/tasks/:id/comments` | JWT, member | Add a comment |
+| GET | `/api/users` | JWT | List users in the caller's accessible workspace |
+| GET | `/api/dashboard` | JWT | Task statistics, recent tasks, and activity for accessible projects |
+| GET | `/api/external/users` | JWT | Cached, processed JSONPlaceholder directory users |
 | GET | `/api/activity/:projectId` | JWT, member | List project activity |
 | GET | `/api/notifications` | JWT | List notifications for the current user |
 | GET | `/health` | Public | Health check |
+
+### Assignment-facing API details
+
+All task and dashboard endpoints require `Authorization: Bearer <JWT>`. The task list always queries MongoDB; it never fetches the full task set for client-side pagination.
+
+| Method | Endpoint | Query/body | Purpose |
+|---|---|---|---|
+| GET | `/api/tasks` | `projectId`, `status`, `priority`, `assignee` (or `assignedTo`), `search`, `page`, `limit`, `sortBy`, `sortOrder` | List only tasks the caller can access. `limit` defaults to 20 and is capped at 100. |
+| GET | `/api/tasks/:id` | — | Read one authorized task. |
+| POST | `/api/tasks` | `title`, `projectId`, optional description/assignee/status/priority/dueDate | Create a task in an authorized project. |
+| PUT | `/api/tasks/:id` | Any editable task fields | Update a task. `PATCH` remains supported for existing clients. |
+| DELETE | `/api/tasks/:id` | — | Soft-delete an authorized task. |
+| GET/POST | `/api/tasks/:id/comments` | POST body: `text` | Read or add task notes. |
+| GET | `/api/users` | — | Safe user directory (no password fields). User creation remains `POST /api/auth/register`. |
+| GET | `/api/dashboard` | optional `projectId` | Live six-stat dashboard with recent tasks/activity. |
+| GET | `/api/external/users` | — | External Directory response from JSONPlaceholder. |
+
+Example task-list response:
+
+```json
+{
+  "success": true,
+  "data": [{ "_id": "…", "title": "Prepare release", "status": "in-progress" }],
+  "pagination": { "page": 1, "limit": 20, "total": 57, "totalPages": 3 }
+}
+```
+
+The established statuses are `todo`, `in-progress`, and `done`, which map to the assignment language as pending, in progress, and completed. Priorities are `low`, `medium`, `high`, and `urgent`.
+
+### External API integration
+
+`GET /api/external/users` calls `https://jsonplaceholder.typicode.com/users` server-side. The API returns only name, email, company, and city; requests are aborted after five seconds and successful results are cached for five minutes to avoid unnecessary upstream traffic. The Dashboard's **External Directory** renders this response.
 
 ---
 
@@ -164,6 +206,8 @@ SMTP_PORT=587
 SMTP_USER=
 SMTP_PASS=
 ```
+
+`MONGO_URI` is deliberately retained instead of migrating to PostgreSQL/SQLite: this mature application already uses MongoDB/Mongoose relationships and authorization queries. Keeping it protects the existing architecture while still providing real persistence, validation, and database-side task filtering.
 
 **Frontend**
 

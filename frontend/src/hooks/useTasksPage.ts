@@ -9,6 +9,7 @@ import type {
   ProjectMember,
   Task,
   TaskFilters,
+  TaskPagination,
   TaskStatus,
   TaskUpdatePayload,
 } from '../types'
@@ -37,7 +38,12 @@ export const useTasksPage = (
     title: '', description: '', assignedTo: '', status: 'todo', priority: 'medium', dueDate: '',
   })
   const [commentTask, setCommentTask] = useState<Task | null>(null)
+  const [detailTask, setDetailTask] = useState<Task | null>(null)
+  const [detailLoading, setDetailLoading] = useState(false)
   const [filters, setFilters] = useState<TaskFilters>(EMPTY_FILTERS)
+  const [sortBy, setSortBy] = useState('createdAt')
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc')
+  const [pagination, setPagination] = useState<TaskPagination>({ page: 1, limit: 20, total: 0, totalPages: 1 })
   const [draggedTaskId, setDraggedTaskId] = useState('')
   const prevProjectIdRef = useRef('')
 
@@ -101,7 +107,7 @@ export const useTasksPage = (
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [taskProjectId, upsertTask])
 
-  // ── Load tasks when project changes ───────────────────────────────────────
+  // ── Load tasks from the API whenever server-side list controls change ─────
 
   useEffect(() => {
     if (!auth || !taskProjectId) {
@@ -109,15 +115,31 @@ export const useTasksPage = (
       setTasks([])
       return
     }
-    setFilters(EMPTY_FILTERS)
     let cancelled = false
     setLoading(true)
-    request<{ data: Task[] }>(`/api/tasks?projectId=${taskProjectId}&limit=100`)
-      .then((body) => { if (!cancelled) setTasks(body.data) })
+    const query = new URLSearchParams({
+      projectId: taskProjectId,
+      page: String(pagination.page),
+      limit: String(pagination.limit),
+      sortBy,
+      sortOrder,
+    })
+    if (filters.search) query.set('search', filters.search)
+    if (filters.status) query.set('status', filters.status)
+    if (filters.priority) query.set('priority', filters.priority)
+    if (filters.assignedTo) query.set('assignedTo', filters.assignedTo)
+
+    request<{ data: Task[]; pagination: TaskPagination }>(`/api/tasks?${query}`)
+      .then((body) => {
+        if (!cancelled) {
+          setTasks(body.data)
+          setPagination(body.pagination)
+        }
+      })
       .catch((err) => showToast(err instanceof Error ? err.message : 'Could not load tasks'))
       .finally(() => { if (!cancelled) setLoading(false) })
     return () => { cancelled = true }
-  }, [auth, taskProjectId, request, showToast])
+  }, [auth, taskProjectId, filters, pagination.page, pagination.limit, request, showToast, sortBy, sortOrder])
 
   // ProjectMember is the canonical source of project roles and assignee eligibility.
   useEffect(() => {
@@ -220,6 +242,19 @@ export const useTasksPage = (
     })
   }
 
+  const openTaskDetails = async (task: Task) => {
+    setDetailTask(task)
+    setDetailLoading(true)
+    try {
+      const body = await request<{ data: Task }>(`/api/tasks/${task._id}`)
+      setDetailTask(body.data)
+    } catch (err) {
+      showToast(err instanceof Error ? err.message : 'Could not load task details')
+    } finally {
+      setDetailLoading(false)
+    }
+  }
+
   const deleteTask = async (task: Task) => {
     try {
       await request(`/api/tasks/${task._id}`, { method: 'DELETE' })
@@ -255,35 +290,33 @@ export const useTasksPage = (
     setTasks([])
     setEditTask(null)
     setCommentTask(null)
+    setDetailTask(null)
     setFilters(EMPTY_FILTERS)
+    setPagination((current) => ({ ...current, page: 1 }))
+  }
+
+  const updateFilters = (nextFilters: TaskFilters) => {
+    setFilters(nextFilters)
+    setPagination((current) => ({ ...current, page: 1 }))
+  }
+
+  const changePage = (page: number) => setPagination((current) => ({ ...current, page }))
+
+  const changeSort = (nextSortBy: string) => {
+    if (nextSortBy === sortBy) setSortOrder((current) => current === 'asc' ? 'desc' : 'asc')
+    else { setSortBy(nextSortBy); setSortOrder('desc') }
+    setPagination((current) => ({ ...current, page: 1 }))
   }
 
   // ── Derived ────────────────────────────────────────────────────────────────
 
-  const filteredTasks = useMemo(() => {
-    const { search, status, priority, assignedTo } = filters
-    return tasks.filter((t) => {
-      if (status && t.status !== status) return false
-      if (priority && (t.priority ?? 'medium') !== priority) return false
-      if (assignedTo) {
-        const id = t.assignedTo?.id || t.assignedTo?._id || ''
-        if (id !== assignedTo) return false
-      }
-      if (search) {
-        const s = search.toLowerCase()
-        if (!t.title.toLowerCase().includes(s) && !(t.description?.toLowerCase().includes(s))) return false
-      }
-      return true
-    })
-  }, [tasks, filters])
-
   const tasksByStatus = useMemo(
     () =>
       STATUS_ORDER.reduce(
-        (groups, status) => ({ ...groups, [status]: filteredTasks.filter((t) => t.status === status) }),
+        (groups, status) => ({ ...groups, [status]: tasks.filter((t) => t.status === status) }),
         {} as Record<TaskStatus, Task[]>,
       ),
-    [filteredTasks],
+    [tasks],
   )
 
   return {
@@ -293,7 +326,9 @@ export const useTasksPage = (
     taskForm, setTaskForm,
     editTask, editForm, setEditForm,
     commentTask, setCommentTask,
-    filters, setFilters,
+    detailTask, detailLoading, openTaskDetails, closeTaskDetails: () => setDetailTask(null),
+    filters, setFilters: updateFilters,
+    sortBy, sortOrder, pagination, changePage, changeSort,
     draggedTaskId, setDraggedTaskId,
     createTask, updateTaskStatus, assignTaskMember,
     saveTaskEdit, openTaskEdit, closeTaskEdit: () => setEditTask(null),

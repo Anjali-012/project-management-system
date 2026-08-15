@@ -25,4 +25,8 @@ const taskSchema = new mongoose.Schema(
   { timestamps: true },
 );
 
+// Supports the assignment-facing task list without loading all tasks in memory.
+taskSchema.index({ project: 1, isDeleted: 1, status: 1, priority: 1, createdAt: -1 });
+taskSchema.index({ assignedTo: 1, isDeleted: 1, createdAt: -1 });
+
 module.exports = mongoose.model("Task", taskSchema);
