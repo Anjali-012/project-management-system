@@ -1,37 +1,4 @@
-const Activity = require("../models/activity.model");
-const Project = require("../models/project.model");
-const asyncHandler = require("../utils/asyncHandler");
-
-const getProjectActivity = asyncHandler(async (req, res) => {
-  const activities = await Activity.find({ project: req.project._id })
-    .populate("user", "name email")
-    .sort({ createdAt: -1 });
-
-  res.status(200).json({
-    success: true,
-    count: activities.length,
-    data: activities,
-  });
-});
-
-// GET /api/activity — all projects the authenticated user is a member of
-const getAllActivity = asyncHandler(async (req, res) => {
-  const projects = await Project.find({ members: req.user.userId }, "_id").lean();
-  const projectIds = projects.map((p) => p._id);
-
-  const activities = await Activity.find({ project: { $in: projectIds } })
-    .populate("user", "name email")
-    .sort({ createdAt: -1 })
-    .limit(100);
-
-  res.status(200).json({
-    success: true,
-    count: activities.length,
-    data: activities,
-  });
-});
-
-module.exports = {
-  getAllActivity,
-  getProjectActivity,
-};
+const asyncHandler=require("../utils/asyncHandler");const db=require("../repositories/postgres.repository");
+const map=(r)=>({...db.toActivity(r),user:r.user});
+const getProjectActivity=asyncHandler(async(req,res)=>{const rows=(await db.query(`SELECT a.*,json_build_object('_id',u.id,'id',u.id,'name',u.name,'email',u.email) user FROM activities a JOIN users u ON u.id=a.user_id WHERE a.project_id=$1 ORDER BY a.created_at DESC`,[req.project._id])).rows.map(map);res.json({success:true,count:rows.length,data:rows});});
+const getAllActivity=asyncHandler(async(req,res)=>{const sql=req.user.role==="admin"?`SELECT a.*,json_build_object('_id',u.id,'id',u.id,'name',u.name,'email',u.email) user FROM activities a JOIN users u ON u.id=a.user_id ORDER BY a.created_at DESC LIMIT 100`:`SELECT a.*,json_build_object('_id',u.id,'id',u.id,'name',u.name,'email',u.email) user FROM activities a JOIN users u ON u.id=a.user_id WHERE EXISTS (SELECT 1 FROM project_members pm WHERE pm.project_id=a.project_id AND pm.user_id=$1) ORDER BY a.created_at DESC LIMIT 100`;const rows=(await db.query(sql,req.user.role==="admin"?[]:[req.user.userId])).rows.map(map);res.json({success:true,count:rows.length,data:rows});});module.exports={getAllActivity,getProjectActivity};

@@ -1,11 +1,2 @@
-const Notification = require("../models/notification.model");
-
-const createNotification = async ({ user, message, type, project = null }) => {
-  try {
-    await Notification.create({ user, message, type, project });
-  } catch (err) {
-    console.error("Notification error:", err.message);
-  }
-};
-
-module.exports = createNotification;
+const db=require("../repositories/postgres.repository");
+module.exports=async({user,message,type,project=null})=>{try{await db.query("INSERT INTO notifications (user_id,project_id,message,type) VALUES ($1,$2,$3,$4)",[user,project,message,type]);}catch(e){console.error("Notification error:",e.message);}};

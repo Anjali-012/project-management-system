@@ -33,7 +33,7 @@ const notifyUser = async ({ type, user, task }) => {
         user: user._id,
         message: messageBuilder(task),
         type,
-        project: task.project,
+        project: task.project?._id || task.project,
       });
     }
 
@@ -42,7 +42,7 @@ const notifyUser = async ({ type, user, task }) => {
         type: EMAIL_EVENTS[type],
         to: user.email,
         userId: user._id,
-        projectId: task.project,
+        projectId: task.project?._id || task.project,
         vars: {
           name: user.name,
           taskTitle: task.title,

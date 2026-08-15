@@ -7,7 +7,7 @@ const STATUS_ALIASES = { pending: "todo", in_progress: "in-progress", completed:
 
 const createTaskValidation = [
   body("title").notEmpty().withMessage("Task title is required"),
-  body("projectId").isMongoId().withMessage("Valid project ID is required"),
+  body("projectId").isUUID().withMessage("Valid project ID is required"),
   body("status").optional().isIn(TASK_STATUSES).withMessage("Invalid task status"),
   body("priority").optional().isIn(TASK_PRIORITIES).withMessage("Invalid priority"),
   body("dueDate").optional({ nullable: true }).isISO8601().withMessage("Invalid due date"),
@@ -17,7 +17,7 @@ const updateTaskValidation = [
   body("status").optional().isIn(TASK_STATUSES).withMessage("Invalid task status"),
   body("priority").optional().isIn(TASK_PRIORITIES).withMessage("Invalid priority"),
   body("dueDate").optional({ nullable: true }).isISO8601().withMessage("Invalid due date"),
-  body("projectId").optional().isMongoId().withMessage("Valid project ID is required"),
+  body("projectId").optional().isUUID().withMessage("Valid project ID is required"),
 ];
 
 const addCommentValidation = [
@@ -26,12 +26,12 @@ const addCommentValidation = [
 ];
 
 const listTasksValidation = [
-  query("projectId").optional().isMongoId().withMessage("Valid project ID is required"),
+  query("projectId").optional().isUUID().withMessage("Valid project ID is required"),
   query("status").optional().customSanitizer((value) => STATUS_ALIASES[value] || value)
     .isIn(TASK_STATUSES).withMessage("Invalid task status"),
   query("priority").optional().isIn(TASK_PRIORITIES).withMessage("Invalid priority"),
-  query("assignedTo").optional().isMongoId().withMessage("Valid assignee ID is required"),
-  query("assignee").optional().isMongoId().withMessage("Valid assignee ID is required"),
+  query("assignedTo").optional().isUUID().withMessage("Valid assignee ID is required"),
+  query("assignee").optional().isUUID().withMessage("Valid assignee ID is required"),
   query("search").optional().trim().isLength({ max: 100 }).withMessage("Search must be 100 characters or less"),
   query("page").optional().isInt({ min: 1 }).withMessage("Page must be a positive integer"),
   query("limit").optional().isInt({ min: 1, max: 100 }).withMessage("Limit must be between 1 and 100"),

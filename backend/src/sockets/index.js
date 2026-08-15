@@ -2,7 +2,7 @@ const jwt = require("jsonwebtoken");
 const { Server } = require("socket.io");
 const { createAdapter } = require("@socket.io/redis-adapter");
 
-const Project = require("../models/project.model");
+const db = require("../repositories/postgres.repository");
 const createRedisClients = require("../config/redis");
 
 let io;
@@ -61,9 +61,8 @@ const initSocket = (server) => {
       }
 
       // batch-fetch names from DB
-      const User = require("../models/user.model");
-      const dbUsers = await User.find({ _id: { $in: userIds } }, "name").lean();
-      const nameMap = Object.fromEntries(dbUsers.map((u) => [u._id.toString(), u.name]));
+      const dbUsers = (await db.query("SELECT id, name FROM users WHERE id = ANY($1::uuid[])", [userIds])).rows;
+      const nameMap = Object.fromEntries(dbUsers.map((u) => [u.id, u.name]));
 
       const users = userIds.map((id) => ({ id, name: nameMap[id] ?? "Member" }));
       io.to(`project:${projectId}`).emit("presence:update", { projectId, users });
@@ -71,11 +70,9 @@ const initSocket = (server) => {
 
     socket.on("project:join", async (projectId, ack) => {
       try {
-        const project = await Project.findById(projectId);
+        const project = await db.findProject(projectId);
         if (!project) throw new Error("Project not found");
-        const isMember = project.members.some(
-          (memberId) => memberId.toString() === socket.user.userId,
-        );
+        const isMember = socket.user.role === "admin" || await db.isMember(socket.user.userId, projectId);
         if (!isMember) throw new Error("Not a project member");
         socket.join(`project:${projectId}`);
         broadcastPresence(projectId).catch(() => undefined);

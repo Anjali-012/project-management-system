@@ -1,7 +1,7 @@
 /**
  * Centralized RBAC permission configuration.
  *
- * Permissions are DERIVED from project roles — never stored in MongoDB.
+ * Permissions are derived from project roles stored in PostgreSQL.
  * Adding a new permission: add it to the relevant role arrays below.
  * Adding a new role: add a new key with its permission array.
  */

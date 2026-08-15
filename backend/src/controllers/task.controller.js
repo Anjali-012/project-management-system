@@ -1,7 +1,7 @@
 const asyncHandler = require("../utils/asyncHandler");
 const taskService = require("../services/task.service");
 const { emitToProject } = require("../sockets");
-const Activity = require("../models/activity.model");
+const db = require("../repositories/postgres.repository");
 
 const createTask = asyncHandler(async (req, res) => {
   const task = await taskService.createTask({
@@ -34,24 +34,17 @@ const getTasks = asyncHandler(async (req, res) => {
 });
 
 const getTask = asyncHandler(async (req, res) => {
-  const task = await taskService.populateTask(req.task.constructor.findById(req.task._id));
+  const task = await db.taskWithRelations(req.task._id);
   res.status(200).json({ success: true, data: task });
 });
 
 const getComments = asyncHandler(async (req, res) => {
-  const task = await taskService.populateTask(req.task.constructor.findById(req.task._id));
+  const task = await db.taskWithRelations(req.task._id);
   res.status(200).json({ success: true, count: task.comments.length, data: task.comments });
 });
 
 const getTaskActivity = asyncHandler(async (req, res) => {
-  const activities = await Activity.find({
-    project: req.task.project,
-    "metadata.taskId": req.task._id,
-  })
-    .populate("user", "name email")
-    .sort({ createdAt: -1 })
-    .limit(20)
-    .lean();
+  const activities = (await db.query(`SELECT a.*, json_build_object('_id',u.id,'id',u.id,'name',u.name,'email',u.email) AS user FROM activities a JOIN users u ON u.id=a.user_id WHERE a.task_id=$1 ORDER BY a.created_at DESC LIMIT 20`, [req.task._id])).rows.map((r) => ({ ...db.toActivity(r), user:r.user }));
   res.status(200).json({ success: true, count: activities.length, data: activities });
 });
 

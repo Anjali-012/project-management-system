@@ -1,29 +1,3 @@
-const Notification = require("../models/notification.model");
-const Project = require("../models/project.model");
-const asyncHandler = require("../utils/asyncHandler");
-
-const getMyNotifications = asyncHandler(async (req, res) => {
-  const userProjects = await Project.find({ members: req.user.userId }).select("_id");
-  const projectIds = userProjects.map((p) => p._id);
-
-  // show notifications that are either scoped to a project the user belongs to,
-  // or have no project (system-level, e.g. PROJECT_MEMBER_ADDED)
-  const notifications = await Notification.find({
-    user: req.user.userId,
-    $or: [{ project: { $in: projectIds } }, { project: null }],
-  })
-    .sort({ createdAt: -1 })
-    .limit(20);
-
-  res.status(200).json({ success: true, count: notifications.length, data: notifications });
-});
-
-const markAllRead = asyncHandler(async (req, res) => {
-  await Notification.updateMany(
-    { user: req.user.userId, isRead: false },
-    { isRead: true },
-  );
-  res.status(200).json({ success: true });
-});
-
-module.exports = { getMyNotifications, markAllRead };
+const asyncHandler=require("../utils/asyncHandler");const db=require("../repositories/postgres.repository");
+const getMyNotifications=asyncHandler(async(req,res)=>{const rows=(await db.query(`SELECT n.id,n.user_id,n.project_id,n.message,n.type,n.is_read,n.created_at,n.updated_at FROM notifications n WHERE n.user_id=$1 AND (n.project_id IS NULL OR EXISTS (SELECT 1 FROM project_members pm WHERE pm.project_id=n.project_id AND pm.user_id=$1)) ORDER BY n.created_at DESC LIMIT 20`,[req.user.userId])).rows.map(n=>({_id:n.id,id:n.id,user:n.user_id,project:n.project_id,message:n.message,type:n.type,isRead:n.is_read,createdAt:n.created_at,updatedAt:n.updated_at}));res.json({success:true,count:rows.length,data:rows});});
+const markAllRead=asyncHandler(async(req,res)=>{await db.query("UPDATE notifications SET is_read=true,updated_at=CURRENT_TIMESTAMP WHERE user_id=$1 AND is_read=false",[req.user.userId]);res.json({success:true});});module.exports={getMyNotifications,markAllRead};

@@ -10,7 +10,7 @@ const createProjectValidation = [
 ];
 
 const addMemberValidation = [
-  param("projectId").isMongoId().withMessage("Valid project ID is required"),
+  param("projectId").isUUID().withMessage("Valid project ID is required"),
   body("email").isEmail().withMessage("Valid email is required"),
   body("role")
     .optional()
@@ -19,8 +19,8 @@ const addMemberValidation = [
 ];
 
 const changeMemberRoleValidation = [
-  param("projectId").isMongoId().withMessage("Valid project ID is required"),
-  param("userId").isMongoId().withMessage("Valid user ID is required"),
+  param("projectId").isUUID().withMessage("Valid project ID is required"),
+  param("userId").isUUID().withMessage("Valid user ID is required"),
   body("role")
     .notEmpty()
     .withMessage("Role is required")
@@ -29,8 +29,8 @@ const changeMemberRoleValidation = [
 ];
 
 const removeMemberValidation = [
-  param("projectId").isMongoId().withMessage("Valid project ID is required"),
-  param("userId").isMongoId().withMessage("Valid user ID is required"),
+  param("projectId").isUUID().withMessage("Valid project ID is required"),
+  param("userId").isUUID().withMessage("Valid user ID is required"),
 ];
 
 module.exports = {

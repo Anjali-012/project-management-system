@@ -1,60 +1,17 @@
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
-
-const User = require("../models/user.model");
+const db = require("../repositories/postgres.repository");
 const ApiError = require("../utils/ApiError");
 
-const sanitizeUser = (user) => ({
-  id: user._id,
-  name: user.name,
-  email: user.email,
-  role: user.role,
-});
-
 const register = async ({ name, email, password, role = "member" }) => {
-  const existingUser = await User.findOne({ email });
-
-  if (existingUser) {
-    throw new ApiError(400, "User already exists");
-  }
-
-  const hashedPassword = await bcrypt.hash(password, 10);
-  const user = await User.create({ name, email, password: hashedPassword, role });
-
-  return sanitizeUser(user);
+  if (await db.findUserByEmail(email)) throw new ApiError(400, "User already exists");
+  const user = await db.createUser({ name, email, password: await bcrypt.hash(password, 10), role });
+  return user;
 };
-
 const login = async ({ email, password }) => {
-  const user = await User.findOne({ email });
-
-  if (!user) {
-    throw new ApiError(400, "Invalid credentials");
-  }
-
-  const isPasswordMatched = await bcrypt.compare(password, user.password);
-
-  if (!isPasswordMatched) {
-    throw new ApiError(400, "Invalid credentials");
-  }
-
-  const token = jwt.sign(
-    {
-      userId: user._id,
-      role: user.role,
-    },
-    process.env.JWT_SECRET,
-    {
-      expiresIn: "7d",
-    },
-  );
-
-  return {
-    token,
-    user: sanitizeUser(user),
-  };
+  const user = await db.findUserWithPassword(email);
+  if (!user || !(await bcrypt.compare(password, user.password))) throw new ApiError(400, "Invalid credentials");
+  const safeUser = db.toUser(user);
+  return { token: jwt.sign({ userId: user.id, role: user.role }, process.env.JWT_SECRET, { expiresIn: "7d" }), user: safeUser };
 };
-
-module.exports = {
-  register,
-  login,
-};
+module.exports = { register, login };
