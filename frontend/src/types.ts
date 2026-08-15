@@ -28,7 +28,7 @@ export type Project = {
   createdBy: Member
 }
 
-export type TaskStatus = 'todo' | 'in-progress' | 'done'
+export type TaskStatus = 'todo' | 'in-progress' | 'done' | 'blocked'
 export type TaskPriority = 'low' | 'medium' | 'high' | 'urgent'
 
 export type Comment = {

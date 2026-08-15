@@ -36,7 +36,7 @@ export const TaskCard = memo(({
 
   return (
     <article
-      className={styles.taskCard}
+      className={`${styles.taskCard} shadow-sm`}
       draggable={editable}
       onDragStart={() => editable && onDragStart(task._id)}
     >

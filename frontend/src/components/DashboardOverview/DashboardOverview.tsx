@@ -105,7 +105,7 @@ export const DashboardOverview = ({
   const showInviteMember = projectFilter !== 'all' && scopedCapabilities.canManageMembers
 
   return (
-    <section className="dashboard-overview">
+    <section className="dashboard-overview space-y-5">
       <div className="hero-actions-row">
         <article className="project-hero">
           <div className="project-hero-copy">
@@ -174,7 +174,7 @@ export const DashboardOverview = ({
         <>
           <div className="stats-grid">
             {stats.map((stat) => (
-              <article className="stat-card" key={stat.label}>
+              <article className="stat-card rounded-xl" key={stat.label}>
                 <span className={`stat-icon stat-${stat.tone}`}>{stat.icon}</span>
                 <div>
                   <h2>{stat.label}</h2>

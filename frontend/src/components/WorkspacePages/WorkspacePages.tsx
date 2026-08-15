@@ -207,7 +207,7 @@ export const TasksPage = ({
   }
 
   return (
-    <section className="section-page tasks-page">
+    <section className="section-page tasks-page space-y-4">
       {/* ── Toolbar ── */}
       <div className={taskStyles.toolbar}>
         <select
@@ -243,7 +243,7 @@ export const TasksPage = ({
             />
 
             <select
-              className={taskStyles.filterSelect}
+              className={`${taskStyles.filterSelect} transition-colors`}
               value={filters.status}
               onChange={(e) =>
                 onFiltersChange({

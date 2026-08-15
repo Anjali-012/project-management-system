@@ -1,6 +1,7 @@
 const asyncHandler = require("../utils/asyncHandler");
 const taskService = require("../services/task.service");
 const { emitToProject } = require("../sockets");
+const Activity = require("../models/activity.model");
 
 const createTask = asyncHandler(async (req, res) => {
   const task = await taskService.createTask({
@@ -42,6 +43,18 @@ const getComments = asyncHandler(async (req, res) => {
   res.status(200).json({ success: true, count: task.comments.length, data: task.comments });
 });
 
+const getTaskActivity = asyncHandler(async (req, res) => {
+  const activities = await Activity.find({
+    project: req.task.project,
+    "metadata.taskId": req.task._id,
+  })
+    .populate("user", "name email")
+    .sort({ createdAt: -1 })
+    .limit(20)
+    .lean();
+  res.status(200).json({ success: true, count: activities.length, data: activities });
+});
+
 const updateTask = asyncHandler(async (req, res) => {
   const updatedTask = await taskService.updateTask({
     task: req.task, payload: req.body, userId: req.user.userId, project: req.project,
@@ -68,4 +81,4 @@ const addComment = asyncHandler(async (req, res) => {
   res.status(201).json({ success: true, message: "Comment added", data: task });
 });
 
-module.exports = { createTask, getTasks, getTask, getComments, updateTask, deleteTask, addComment };
+module.exports = { createTask, getTasks, getTask, getComments, getTaskActivity, updateTask, deleteTask, addComment };

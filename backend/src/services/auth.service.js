@@ -11,7 +11,7 @@ const sanitizeUser = (user) => ({
   role: user.role,
 });
 
-const register = async ({ name, email, password }) => {
+const register = async ({ name, email, password, role = "member" }) => {
   const existingUser = await User.findOne({ email });
 
   if (existingUser) {
@@ -19,7 +19,7 @@ const register = async ({ name, email, password }) => {
   }
 
   const hashedPassword = await bcrypt.hash(password, 10);
-  const user = await User.create({ name, email, password: hashedPassword });
+  const user = await User.create({ name, email, password: hashedPassword, role });
 
   return sanitizeUser(user);
 };

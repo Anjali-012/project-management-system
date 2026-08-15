@@ -1,6 +1,6 @@
 const { body, query } = require("express-validator");
 
-const TASK_STATUSES = ["todo", "in-progress", "done"];
+const TASK_STATUSES = ["todo", "in-progress", "done", "blocked"];
 const TASK_PRIORITIES = ["low", "medium", "high", "urgent"];
 const TASK_SORT_FIELDS = ["createdAt", "updatedAt", "title", "dueDate", "priority", "status"];
 const STATUS_ALIASES = { pending: "todo", in_progress: "in-progress", completed: "done" };

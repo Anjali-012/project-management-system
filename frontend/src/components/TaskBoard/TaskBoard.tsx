@@ -35,7 +35,7 @@ export const TaskBoard = ({
   )
 
   return (
-  <section className={styles.board}>
+  <section className={`${styles.board} grid gap-4`}>
     {STATUS_ORDER.map((status) => (
       <div
         className={styles.column}
@@ -56,12 +56,14 @@ export const TaskBoard = ({
           {tasksByStatus[status].length === 0 ? (
             <div className={styles.columnEmpty}>
               <span>{status === 'done' ? '✓' : '▤'}</span>
-              <strong>{status === 'done' ? 'No tasks completed yet' : 'No tasks yet'}</strong>
+              <strong>{status === 'done' ? 'No tasks completed yet' : status === 'blocked' ? 'No blocked tasks' : 'No tasks yet'}</strong>
               <p>
                 {status === 'done'
                   ? 'Completed tasks will appear here.'
                   : status === 'todo'
                     ? 'Tasks that are not started will appear here.'
+                    : status === 'blocked'
+                      ? 'Tasks that need attention will appear here.'
                     : 'Tasks in progress will appear here.'}
               </p>
             </div>

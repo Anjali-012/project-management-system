@@ -16,7 +16,14 @@ const loginValidation = [
   body("password").notEmpty().withMessage("Password is required"),
 ];
 
+const createManagedUserValidation = [
+  ...registerValidation,
+  body("role").optional().isIn(["admin", "manager", "member"])
+    .withMessage("Role must be admin, manager, or member"),
+];
+
 module.exports = {
   registerValidation,
   loginValidation,
+  createManagedUserValidation,
 };

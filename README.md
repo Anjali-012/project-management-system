@@ -56,6 +56,7 @@ React + Vite (TypeScript)
 - Task list supports database-backed search, status/priority/assignee filters, safe sorting, and pagination.
 - Dashboard provides total, pending, in-progress, completed, overdue, and current-user task counts from live data.
 - Task details load from the API and include metadata, comments, and edit access.
+- Tasks support Pending, In Progress, Blocked, and Completed assignment-facing statuses while retaining compatible stored values for existing records.
 - External Directory proxies and caches JSONPlaceholder users through the backend with a timeout.
 
 ### Roles & Permissions
@@ -106,6 +107,7 @@ React + Vite (TypeScript)
 | GET | `/api/tasks/:id/comments` | JWT, member | List a task's comments |
 | POST | `/api/tasks/:id/comments` | JWT, member | Add a comment |
 | GET | `/api/users` | JWT | List users in the caller's accessible workspace |
+| POST | `/api/users` | JWT, admin | Provision a user through the existing auth service |
 | GET | `/api/dashboard` | JWT | Task statistics, recent tasks, and activity for accessible projects |
 | GET | `/api/external/users` | JWT | Cached, processed JSONPlaceholder directory users |
 | GET | `/api/activity/:projectId` | JWT, member | List project activity |
@@ -124,7 +126,8 @@ All task and dashboard endpoints require `Authorization: Bearer <JWT>`. The task
 | PUT | `/api/tasks/:id` | Any editable task fields | Update a task. `PATCH` remains supported for existing clients. |
 | DELETE | `/api/tasks/:id` | — | Soft-delete an authorized task. |
 | GET/POST | `/api/tasks/:id/comments` | POST body: `text` | Read or add task notes. |
-| GET | `/api/users` | — | Safe user directory (no password fields). User creation remains `POST /api/auth/register`. |
+| GET | `/api/users` | — | Safe user directory (no password fields). |
+| POST | `/api/users` | `name`, `email`, `password`, optional `role` | Admin-only user provisioning that reuses the auth service. Public registration remains `POST /api/auth/register`. |
 | GET | `/api/dashboard` | optional `projectId` | Live six-stat dashboard with recent tasks/activity. |
 | GET | `/api/external/users` | — | External Directory response from JSONPlaceholder. |
 
@@ -138,7 +141,7 @@ Example task-list response:
 }
 ```
 
-The established statuses are `todo`, `in-progress`, and `done`, which map to the assignment language as pending, in progress, and completed. Priorities are `low`, `medium`, `high`, and `urgent`.
+The established stored statuses are `todo`, `in-progress`, `blocked`, and `done`, displayed as Pending, In Progress, Blocked, and Completed. Existing status values remain compatible. Priorities are `low`, `medium`, `high`, and `urgent`.
 
 ### External API integration
 
@@ -217,6 +220,8 @@ cp .env.example .env
 npm install
 npm run dev
 ```
+
+Tailwind CSS is configured through the official `@tailwindcss/vite` plugin and is used incrementally in assignment-facing dashboard, task board/card, task controls, and task-detail UI. Existing CSS Modules remain in place to preserve the established visual system.
 
 Required `.env` variables:
 

@@ -4,12 +4,13 @@ export const API_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:5001'
 export const SOCKET_URL = import.meta.env.VITE_SOCKET_URL ?? API_URL
 
 export const STATUS_LABELS: Record<TaskStatus, string> = {
-  todo: 'Todo',
+  todo: 'Pending',
   'in-progress': 'In Progress',
   done: 'Done',
+  blocked: 'Blocked',
 }
 
-export const STATUS_ORDER: TaskStatus[] = ['todo', 'in-progress', 'done']
+export const STATUS_ORDER: TaskStatus[] = ['todo', 'in-progress', 'blocked', 'done']
 
 export const PRIORITY_LABELS: Record<TaskPriority, string> = {
   low: 'Low',

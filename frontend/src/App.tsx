@@ -205,6 +205,7 @@ const openMembers = () => handleSectionChange('members')
           onEdit={(task) => { tasks.closeTaskDetails(); tasks.openTaskEdit(task) }}
           onOpenComments={(task) => { tasks.closeTaskDetails(); tasks.setCommentTask(task) }}
           canEdit={canEditTask(taskCapabilities, tasks.detailTask.createdBy?.id || tasks.detailTask.createdBy?._id || '', auth.user.id)}
+          activities={tasks.detailActivities}
         />
       )}
 

@@ -8,6 +8,7 @@ import type {
   Project,
   ProjectMember,
   Task,
+  Activity,
   TaskFilters,
   TaskPagination,
   TaskStatus,
@@ -40,6 +41,7 @@ export const useTasksPage = (
   const [commentTask, setCommentTask] = useState<Task | null>(null)
   const [detailTask, setDetailTask] = useState<Task | null>(null)
   const [detailLoading, setDetailLoading] = useState(false)
+  const [detailActivities, setDetailActivities] = useState<Activity[]>([])
   const [filters, setFilters] = useState<TaskFilters>(EMPTY_FILTERS)
   const [sortBy, setSortBy] = useState('createdAt')
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc')
@@ -244,10 +246,15 @@ export const useTasksPage = (
 
   const openTaskDetails = async (task: Task) => {
     setDetailTask(task)
+    setDetailActivities([])
     setDetailLoading(true)
     try {
-      const body = await request<{ data: Task }>(`/api/tasks/${task._id}`)
-      setDetailTask(body.data)
+      const [taskBody, activityBody] = await Promise.all([
+        request<{ data: Task }>(`/api/tasks/${task._id}`),
+        request<{ data: Activity[] }>(`/api/tasks/${task._id}/activity`),
+      ])
+      setDetailTask(taskBody.data)
+      setDetailActivities(activityBody.data)
     } catch (err) {
       showToast(err instanceof Error ? err.message : 'Could not load task details')
     } finally {
@@ -326,7 +333,8 @@ export const useTasksPage = (
     taskForm, setTaskForm,
     editTask, editForm, setEditForm,
     commentTask, setCommentTask,
-    detailTask, detailLoading, openTaskDetails, closeTaskDetails: () => setDetailTask(null),
+    detailTask, detailLoading, detailActivities, openTaskDetails,
+    closeTaskDetails: () => { setDetailTask(null); setDetailActivities([]) },
     filters, setFilters: updateFilters,
     sortBy, sortOrder, pagination, changePage, changeSort,
     draggedTaskId, setDraggedTaskId,
