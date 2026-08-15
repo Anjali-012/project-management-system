@@ -49,14 +49,15 @@ React + Vite (TypeScript)
 - Register and log in with JWT authentication.
 - Create projects; only members can see a project.
 - Project creators and admins can add members by email.
-- Members can create, view, update, and move tasks between **Todo**, **In Progress**, and **Done**.
+- Members can create, view, update, and move tasks between **Pending**, **In Progress**, **Blocked**, and **Completed**.
 - All users viewing the same project receive task events in real time.
 - Activity log records every task change; notifications are created on member addition and task assignment.
 - Assigned user receives an email notification when a task is created or re-assigned to them.
 - Task list supports database-backed search, status/priority/assignee filters, safe sorting, and pagination.
 - Dashboard provides total, pending, in-progress, completed, overdue, and current-user task counts from live data.
-- Task details load from the API and include metadata, comments, and edit access.
-- Tasks support Pending, In Progress, Blocked, and Completed assignment-facing statuses while retaining compatible stored values for existing records.
+- Task details load from the API and include metadata, comments/notes, activity history, and permission-aware edit access.
+- Tasks support the assignment-facing statuses **Pending**, **In Progress**, **Blocked**, and **Completed** while retaining compatible stored values for existing records.
+- Loading, empty, and error states are provided for major asynchronous views; task deletion requires confirmation.
 - External Directory proxies and caches JSONPlaceholder users through the backend with a timeout.
 
 ### Roles & Permissions
@@ -78,7 +79,7 @@ React + Vite (TypeScript)
 
 ## Database Schema
 
-**users** — `name`, `email`, `passwordHash`, `role`
+**users** — `name`, `email`, `password`, `role`, timestamps
 
 **projects** — `title`, `description`, `createdBy` → User, `members` → [User]
 
@@ -106,6 +107,7 @@ React + Vite (TypeScript)
 | DELETE | `/api/tasks/:id` | JWT, creator/admin | Soft-delete a task |
 | GET | `/api/tasks/:id/comments` | JWT, member | List a task's comments |
 | POST | `/api/tasks/:id/comments` | JWT, member | Add a comment |
+| GET | `/api/tasks/:id/activity` | JWT, member | List activity recorded for a task |
 | GET | `/api/users` | JWT | List users in the caller's accessible workspace |
 | POST | `/api/users` | JWT, admin | Provision a user through the existing auth service |
 | GET | `/api/dashboard` | JWT | Task statistics, recent tasks, and activity for accessible projects |
@@ -126,6 +128,7 @@ All task and dashboard endpoints require `Authorization: Bearer <JWT>`. The task
 | PUT | `/api/tasks/:id` | Any editable task fields | Update a task. `PATCH` remains supported for existing clients. |
 | DELETE | `/api/tasks/:id` | — | Soft-delete an authorized task. |
 | GET/POST | `/api/tasks/:id/comments` | POST body: `text` | Read or add task notes. |
+| GET | `/api/tasks/:id/activity` | — | Read activity history for an authorized task. |
 | GET | `/api/users` | — | Safe user directory (no password fields). |
 | POST | `/api/users` | `name`, `email`, `password`, optional `role` | Admin-only user provisioning that reuses the auth service. Public registration remains `POST /api/auth/register`. |
 | GET | `/api/dashboard` | optional `projectId` | Live six-stat dashboard with recent tasks/activity. |
@@ -141,7 +144,15 @@ Example task-list response:
 }
 ```
 
-The established stored statuses are `todo`, `in-progress`, `blocked`, and `done`, displayed as Pending, In Progress, Blocked, and Completed. Existing status values remain compatible. Priorities are `low`, `medium`, `high`, and `urgent`.
+The established stored statuses are `todo`, `in-progress`, `blocked`, and `done`, displayed as **Pending**, **In Progress**, **Blocked**, and **Completed**. Existing status values remain compatible. Priorities are `low`, `medium`, `high`, and `urgent`.
+
+### Assignment readiness
+
+- **Frontend:** React, Vite, TypeScript, Tailwind CSS, CSS Modules, responsive loading/empty/error states, and confirmation before task deletion.
+- **Backend:** Node.js, Express, MongoDB/Mongoose, JWT authentication, validation middleware, centralized API error handling, project-level RBAC, Socket.IO, notifications, and optional Redis scaling.
+- **Tasks:** Create, edit, soft-delete, assign, set priority and due date, change status, add descriptions/comments, inspect task details, and review task activity history.
+- **Task list:** Server-side search, status/priority/assignee filtering, safe sorting, and capped pagination; relevant Mongoose indexes support project/status/priority/assignee/date query patterns.
+- **Dashboard and integrations:** Live task counts (including overdue and current-user tasks), activity/notification summaries, and a timeout-protected, cached JSONPlaceholder External Directory proxy.
 
 ### External API integration
 
@@ -210,7 +221,9 @@ SMTP_USER=
 SMTP_PASS=
 ```
 
-`MONGO_URI` is deliberately retained instead of migrating to PostgreSQL/SQLite: this mature application already uses MongoDB/Mongoose relationships and authorization queries. Keeping it protects the existing architecture while still providing real persistence, validation, and database-side task filtering.
+### Database choice
+
+MongoDB is intentionally retained. The existing application already uses Mongoose and relies on established project/member relationships, JWT authentication, activity history, embedded task comments, notifications, and permission-aware query architecture. The Webvory brief states that PostgreSQL is preferred and SQLite is acceptable, so PostgreSQL is not mandatory; migrating this mature implementation would add risk without improving the assignment requirements. MongoDB continues to provide real persistence, validation, indexes, and database-side task filtering.
 
 **Frontend**
 
@@ -290,10 +303,9 @@ Branching strategy: feature branches → PR → `main`. Direct pushes to `main` 
 
 ## URLs
 
-- Frontend: _add deployed URL here_
-- Backend: _add deployed URL here_
+- Frontend: https://project-management-system-olive-eight.vercel.app
+- Backend: **Manual action required:** add the deployed backend URL here before submission.
 - Planning & Design doc: [`docs/FRD.md`](docs/FRD.md)
-- Loom video: _add video URL here_
 
 ---
 
